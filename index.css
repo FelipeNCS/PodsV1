@@ -10,9 +10,9 @@
 body {
     background-color: #050508;
     color: #ffffff;
-    font-family: 'Outfit', sans-serif;
-    font-size: 16px;
-    font-weight: 400;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
     line-height: 1.5;
     overflow-x: hidden;
     height: 100vh;
@@ -212,10 +212,11 @@ body {
 .pixel-btn-small {
     background-color: #121217;
     color: #ff003c;
-    font-family: 'Press Start 2P', sans-serif;
-    font-size: 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
     padding: 8px 12px;
-    border: 3px solid #ff003c;
+    border: 2px solid #ff003c;
     cursor: pointer;
     box-shadow: 2px 2px 0px #000000;
 }
@@ -223,6 +224,28 @@ body {
 .pixel-btn-small:active {
     transform: translate(2px, 2px);
     box-shadow: 0px 0px 0px #000000;
+}
+
+.pixel-btn-logout {
+    background-color: transparent;
+    color: #ff3366;
+    border: 2px solid #ff3366;
+    padding: 8px 20px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    box-shadow: 2px 2px 0px #000000;
+    transition: all 0.15s ease;
+    letter-spacing: 0.5px;
+}
+
+.pixel-btn-logout:hover {
+    background-color: #ff003c;
+    color: #ffffff;
+    box-shadow: 2px 2px 0px #000000, 0 0 10px rgba(255, 0, 60, 0.6);
 }
 
 /* PAINEL DE GERENCIAMENTO (Dashboard Screen) */
@@ -270,14 +293,17 @@ body {
 }
 
 .stat-label {
-    font-family: 'Press Start 2P', sans-serif;
-    font-size: 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
     color: #8a8a93;
+    letter-spacing: 0.5px;
 }
 
 .stat-value {
-    font-family: 'Press Start 2P', sans-serif;
-    font-size: 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
 }
 
 .text-green { color: #00ff66; text-shadow: 0 0 5px rgba(0, 255, 102, 0.5); }
@@ -292,46 +318,53 @@ body {
     50% { opacity: 0; }
 }
 
-/* Navigation Tabs Menu */
+/* Navigation Tabs Menu (Top Header) */
 .dash-nav {
     display: flex;
-    background-color: #09090d;
-    border-bottom: 2px solid #22222a;
-    padding: 0 30px;
+    gap: 5px;
 }
 
 .nav-tab {
     background: none;
     border: none;
     color: #8a8a93;
-    font-family: 'Press Start 2P', sans-serif;
-    font-size: 12px;
-    padding: 18px 24px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 12px 20px;
     cursor: pointer;
     transition: all 0.2s;
-    border-bottom: 4px solid transparent;
+    border-bottom: 3px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .nav-tab:hover {
     color: #ffffff;
-    background-color: #121217;
 }
 
 .nav-tab.active {
     color: #ff003c;
-    border-bottom: 4px solid #ff003c;
-    background-color: #121217;
+    border-bottom: 3px solid #ff003c;
+}
+
+/* Barra de Valores (Estatísticas + Balanço dos Sócios) */
+.values-bar {
+    background-color: #0b0b0f;
+    padding: 12px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
 /* Sócio Partners Balance Bar */
 .partners-bar {
-    background-color: #0b0b0f;
-    padding: 10px 30px;
     display: flex;
-    justify-content: space-around;
     align-items: center;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 25px;
 }
 
 .partner-stat {
@@ -341,22 +374,23 @@ body {
 }
 
 .partner-stat-label {
-    font-family: 'Outfit', sans-serif;
-    font-size: 14px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
     font-weight: 700;
     color: #ff003c;
     text-shadow: 1px 1px 0px #000;
+    letter-spacing: 0.5px;
 }
 
 .partner-stat-value {
-    font-family: 'Outfit', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
 }
 
 .partner-stat-sub {
-    font-family: 'Outfit', sans-serif;
-    font-size: 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
     color: #8a8a93;
     margin-left: 5px;
 }
@@ -421,8 +455,9 @@ body {
     background-color: #14141c;
     border: 3px solid #ff003c;
     color: #ffffff;
-    font-family: 'Outfit', sans-serif;
-    font-size: 16px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
     padding: 10px 14px;
     outline: none;
     box-shadow: 3px 3px 0px #000000;
@@ -788,9 +823,9 @@ body {
     border: none;
     color: #ffffff;
     padding: 10px 14px;
-    font-family: 'Outfit', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
     text-align: left;
     cursor: pointer;
     width: 100%;

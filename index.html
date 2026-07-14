@@ -8,10 +8,10 @@
     <link rel="icon" type="image/jpeg" href="logo.jpg">
     <!-- Ícone de Atalho para iOS / iPhone (Adicionar à Tela de Início) -->
     <link rel="apple-touch-icon" href="logo.jpg">
-    <!-- Fonts Google: Press Start 2P e Outfit (sem ser pixelada) -->
+    <!-- Fonts Google: Orbitron e Rajdhani (Futuristas e Legíveis) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;650;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -45,6 +45,19 @@
             <div class="header-logo">
                 <img src="logo.jpg" alt="LIGA PODS Logo" class="logo-img-small">
             </div>
+            <!-- Categorias no topo da página (Navegação Principal) -->
+            <nav class="dash-nav">
+                <button class="nav-tab active" data-tab="tab-vender">📦 VENDER POD</button>
+                <button class="nav-tab" data-tab="tab-fiados">⏳ PRODUTOS FIADOS</button>
+                <button class="nav-tab" data-tab="tab-vista">💵 VENDAS À VISTA</button>
+                <button class="nav-tab" data-tab="tab-clientes">👥 CLIENTES</button>
+                <button class="nav-tab" data-tab="tab-config">⚙️ NOVO ADMIN</button>
+            </nav>
+            <button id="btn-back-home" class="pixel-btn-logout">Logout</button>
+        </header>
+
+        <!-- Barra de Valores (Estatísticas e Sócios abaixo das categorias) -->
+        <div class="values-bar pixel-border-bottom">
             <!-- Painel de Estatísticas Rápidas -->
             <div class="quick-stats">
                 <div class="stat-card">
@@ -60,34 +73,24 @@
                     <span id="stat-due-today" class="stat-value text-red blink">0</span>
                 </div>
             </div>
-            <button id="btn-back-home" class="pixel-btn-small">SAIR</button>
-        </header>
 
-        <!-- Navegação Principal (Menu de Inventário Retrô) -->
-        <nav class="dash-nav">
-            <button class="nav-tab active" data-tab="tab-vender">📦 VENDER POD</button>
-            <button class="nav-tab" data-tab="tab-fiados">⏳ PRODUTOS FIADOS</button>
-            <button class="nav-tab" data-tab="tab-vista">💵 VENDAS À VISTA</button>
-            <button class="nav-tab" data-tab="tab-clientes">👥 CLIENTES</button>
-            <button class="nav-tab" data-tab="tab-config">⚙️ NOVO ADMIN</button>
-        </nav>
-
-        <!-- Sub-header com o saldo dos sócios -->
-        <div class="partners-bar pixel-border-bottom">
-            <div class="partner-stat">
-                <span class="partner-stat-label">LIPE:</span>
-                <span id="partner-total-lipe" class="partner-stat-value text-green">R$ 0,00</span>
-                <span id="partner-credit-lipe" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
-            </div>
-            <div class="partner-stat">
-                <span class="partner-stat-label">ANNA:</span>
-                <span id="partner-total-anna" class="partner-stat-value text-green">R$ 0,00</span>
-                <span id="partner-credit-anna" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
-            </div>
-            <div class="partner-stat">
-                <span class="partner-stat-label">LEON:</span>
-                <span id="partner-total-leon" class="partner-stat-value text-green">R$ 0,00</span>
-                <span id="partner-credit-leon" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
+            <!-- Balanço dos Sócios -->
+            <div class="partners-bar">
+                <div class="partner-stat">
+                    <span class="partner-stat-label">LIPE:</span>
+                    <span id="partner-total-lipe" class="partner-stat-value text-green">R$ 0,00</span>
+                    <span id="partner-credit-lipe" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
+                </div>
+                <div class="partner-stat">
+                    <span class="partner-stat-label">ANNA:</span>
+                    <span id="partner-total-anna" class="partner-stat-value text-green">R$ 0,00</span>
+                    <span id="partner-credit-anna" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
+                </div>
+                <div class="partner-stat">
+                    <span class="partner-stat-label">LEON:</span>
+                    <span id="partner-total-leon" class="partner-stat-value text-green">R$ 0,00</span>
+                    <span id="partner-credit-leon" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
+                </div>
             </div>
         </div>
 

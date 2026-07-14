@@ -18,8 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const startScreen = document.getElementById('start-screen');
     const dashboardScreen = document.getElementById('dashboard-screen');
     
-    // Botões de Navegação
-    const btnStart = document.getElementById('btn-start');
+    // Controle de Administradores
+    let admins = JSON.parse(localStorage.getItem('ligapods_admins')) || [
+        { username: 'felipencs', password: '01102030' }
+    ];
+    // Salvar padrão de fábrica caso seja primeira vez
+    if (!localStorage.getItem('ligapods_admins')) {
+        localStorage.setItem('ligapods_admins', JSON.stringify(admins));
+    }
+
+    // Botões de Navegação e Autenticação
+    const loginForm = document.getElementById('login-form');
+    const loginUsernameInput = document.getElementById('login-username');
+    const loginPasswordInput = document.getElementById('login-password');
+    const registerAdminForm = document.getElementById('register-admin-form');
+    const regUsernameInput = document.getElementById('reg-username');
+    const regPasswordInput = document.getElementById('reg-password');
+    
     const btnBackHome = document.getElementById('btn-back-home');
     const navTabs = document.querySelectorAll('.nav-tab');
     const tabPanels = document.querySelectorAll('.tab-panel');
@@ -273,16 +288,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === NAVEGAÇÃO DE TELAS E ABAS ===
-    // Iniciar Gerenciamento
-    btnStart.addEventListener('click', () => {
-        startScreen.classList.remove('active');
-        // Pequeno atraso para a animação retrô
-        setTimeout(() => {
-            dashboardScreen.classList.add('active');
-            renderDashboard();
-            showToast('Sistema Inicializado!', 'success');
-        }, 100);
+    // === NAVEGAÇÃO E AUTENTICAÇÃO ===
+    // Login do Administrador
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = loginUsernameInput.value.trim();
+        const password = loginPasswordInput.value;
+
+        // Validar credenciais
+        const foundAdmin = admins.find(adm => adm.username === username && adm.password === password);
+        
+        if (foundAdmin) {
+            startScreen.classList.remove('active');
+            setTimeout(() => {
+                dashboardScreen.classList.add('active');
+                renderDashboard();
+                showToast(`Olá, ${username}! Bem-vindo.`, 'success');
+                loginForm.reset();
+            }, 100);
+        } else {
+            showToast('ERRO: Usuário ou senha incorretos!', 'danger');
+        }
+    });
+
+    // Registro de Novo Administrador (dentro do painel)
+    registerAdminForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newUsername = regUsernameInput.value.trim();
+        const newPassword = regPasswordInput.value;
+
+        if (newPassword.length < 6) {
+            showToast('ERRO: Senha deve ter no mínimo 6 caracteres!', 'danger');
+            return;
+        }
+
+        // Verificar se já existe
+        const exists = admins.some(adm => adm.username.toLowerCase() === newUsername.toLowerCase());
+        if (exists) {
+            showToast('ERRO: Este usuário já existe!', 'danger');
+            return;
+        }
+
+        // Adicionar novo admin
+        admins.push({ username: newUsername, password: newPassword });
+        localStorage.setItem('ligapods_admins', JSON.stringify(admins));
+
+        showToast(`ADMINISTRADOR ${newUsername.toUpperCase()} CADASTRADO!`, 'success');
+        registerAdminForm.reset();
+        
+        // Ir para a aba de Vender Pod após registrar
+        switchTab('tab-vender');
     });
 
     // Sair do painel

@@ -21,7 +21,17 @@
     <div id="start-screen" class="screen active">
         <div class="start-box pixel-border-double">
             <img src="logo.jpg" alt="LIGA PODS Logo" class="logo-img">
-            <button id="btn-start" class="pixel-btn pulse-glow">INICIAR GERENCIAMENTO</button>
+            <form id="login-form" autocomplete="off">
+                <div class="form-group" style="margin-bottom: 15px; text-align: left;">
+                    <label for="login-username" style="font-family:'Press Start 2P'; font-size:10px; color:#ffffff; margin-bottom:8px; display:block;">USUÁRIO *</label>
+                    <input type="text" id="login-username" placeholder="Digite seu usuário..." required style="width: 100%;">
+                </div>
+                <div class="form-group" style="margin-bottom: 25px; text-align: left;">
+                    <label for="login-password" style="font-family:'Press Start 2P'; font-size:10px; color:#ffffff; margin-bottom:8px; display:block;">SENHA *</label>
+                    <input type="password" id="login-password" placeholder="Digite sua senha..." required style="width: 100%;">
+                </div>
+                <button type="submit" class="pixel-btn pulse-glow" style="width: 100%;">ENTRAR NO GERENCIAMENTO</button>
+            </form>
         </div>
     </div>
 
@@ -55,6 +65,7 @@
             <button class="nav-tab" data-tab="tab-fiados">⏳ PRODUTOS FIADOS</button>
             <button class="nav-tab" data-tab="tab-vista">💵 VENDAS À VISTA</button>
             <button class="nav-tab" data-tab="tab-clientes">👥 CLIENTES</button>
+            <button class="nav-tab" data-tab="tab-config">⚙️ NOVO ADMIN</button>
         </nav>
 
         <!-- Sub-header com o saldo dos sócios -->
@@ -243,6 +254,28 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: CADASTRAR NOVO ADMIN -->
+            <section id="tab-config" class="tab-panel">
+                <div class="form-container pixel-border-single">
+                    <h2 class="section-title">> CADASTRAR NOVO ADMINISTRADOR</h2>
+                    <form id="register-admin-form" autocomplete="off">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reg-username">NOME DE USUÁRIO *</label>
+                                <input type="text" id="reg-username" placeholder="Ex: joao_admin" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-password">SENHA *</label>
+                                <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="pixel-btn success-glow">CADASTRAR ADMIN</button>
+                        </div>
+                    </form>
                 </div>
             </section>
         </main>

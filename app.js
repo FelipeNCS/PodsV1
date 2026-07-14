@@ -1,4 +1,4 @@
-// JS - LIGA PODS Sales Management System (Full Stack MySQL Version)
+// JS - LIGA PODS Sales Management System (Full Stack MySQL Version with LocalStorage Fallback)
 
 document.addEventListener('DOMContentLoaded', () => {
     // === ESTADO DA APLICAÇÃO ===
@@ -232,18 +232,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     animate();
 
-    // === COMUNICAÇÃO COM O BACKEND (API MYSQL) ===
+    // === COMUNICAÇÃO COM O BACKEND (API MYSQL COM FALLBACK LOCALSTORAGE) ===
 
-    // Buscar Vendas do MySQL
+    // Buscar Vendas
     async function loadSales() {
         try {
             const response = await fetch('/api/sales');
-            if (!response.ok) throw new Error('Erro ao buscar dados do MySQL');
+            if (!response.ok) throw new Error();
             sales = await response.json();
             renderDashboard();
         } catch (err) {
-            console.error('Falha ao carregar vendas:', err);
-            showToast('Erro ao sincronizar com o banco de dados!', 'danger');
+            console.warn('API /api/sales indisponível. Usando LocalStorage como backup.');
+            sales = JSON.parse(localStorage.getItem('ligapods_sales')) || [];
+            renderDashboard();
         }
     }
 
@@ -268,11 +269,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = loginPasswordInput.value;
 
         try {
+            // Tenta logar via banco na Railway
             const response = await fetch('/api/admins?action=login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
+            if (!response.ok) throw new Error();
             const result = await response.json();
 
             if (result.success) {
@@ -280,17 +283,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(async () => {
                     dashboardScreen.classList.add('active');
                     await loadSales();
-                    showToast(`Olá, ${username}! Login realizado.`, 'success');
+                    showToast(`Olá, ${username}! Login efetuado via Banco.`, 'success');
                     loginForm.reset();
-                    // Sincronização automática em segundo plano a cada 10 segundos
+                    // Sincronização automática a cada 10 segundos
                     setInterval(loadSales, 10000);
                 }, 100);
             } else {
                 showToast(result.message || 'Usuário ou senha incorretos!', 'danger');
             }
         } catch (err) {
-            console.error('Erro no login:', err);
-            showToast('Falha na autenticação. Verifique o banco!', 'danger');
+            console.warn('Backend indisponível (ou rodando localmente). Efetuando autenticação no LocalStorage.');
+            // Fallback para LocalStorage se o backend não estiver no ar
+            let localAdmins = JSON.parse(localStorage.getItem('ligapods_admins')) || [
+                { username: 'felipencs', password: '01102030' }
+            ];
+            // Salva no local se for o primeiro acesso
+            if (!localStorage.getItem('ligapods_admins')) {
+                localStorage.setItem('ligapods_admins', JSON.stringify(localAdmins));
+            }
+
+            const foundAdmin = localAdmins.find(adm => adm.username === username && adm.password === password);
+            if (foundAdmin) {
+                startScreen.classList.remove('active');
+                setTimeout(async () => {
+                    dashboardScreen.classList.add('active');
+                    await loadSales();
+                    showToast(`Olá, ${username}! Conectado localmente (Offline).`, 'success');
+                    loginForm.reset();
+                }, 100);
+            } else {
+                showToast('ERRO: Usuário ou senha incorretos (Offline)!', 'danger');
+            }
         }
     });
 
@@ -301,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = regPasswordInput.value;
 
         if (password.length < 6) {
-            showToast('Erro: Senha muito curta (mínimo 6 dígitos)', 'danger');
+            showToast('Erro: Senha deve ter no mínimo 6 caracteres!', 'danger');
             return;
         }
 
@@ -311,18 +334,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
+            if (!response.ok) throw new Error();
             const result = await response.json();
 
             if (result.success) {
-                showToast(`Admin ${username.toUpperCase()} cadastrado com sucesso!`, 'success');
+                showToast(`Admin ${username.toUpperCase()} cadastrado com sucesso no MySQL!`, 'success');
                 registerAdminForm.reset();
                 switchTab('tab-vender');
             } else {
                 showToast(result.message || 'Falha ao cadastrar!', 'danger');
             }
         } catch (err) {
-            console.error('Erro no registro:', err);
-            showToast('Erro ao cadastrar novo administrador!', 'danger');
+            console.warn('Backend indisponível. Registrando administrador localmente.');
+            // Registrar localmente
+            let localAdmins = JSON.parse(localStorage.getItem('ligapods_admins')) || [
+                { username: 'felipencs', password: '01102030' }
+            ];
+            const exists = localAdmins.some(adm => adm.username.toLowerCase() === username.toLowerCase());
+            if (exists) {
+                showToast('ERRO: Este usuário já existe localmente!', 'danger');
+                return;
+            }
+            localAdmins.push({ username, password });
+            localStorage.setItem('ligapods_admins', JSON.stringify(localAdmins));
+            showToast(`Admin ${username.toUpperCase()} cadastrado localmente!`, 'success');
+            registerAdminForm.reset();
+            switchTab('tab-vender');
         }
     });
 
@@ -344,14 +381,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetPanel = document.getElementById(tab.getAttribute('data-tab'));
             targetPanel.classList.add('active');
 
-            // Recarregar do MySQL sempre que trocar de aba para garantir dados frescos
             loadSales();
         });
     });
 
     // === REGISTRO DE VENDAS ===
 
-    // Cálculo em Tempo Real de Juros e Total (Formulário Principal)
     function updateLiveTotal() {
         const price = parseFloat(productPriceInput.value) || 0;
         const shipping = parseFloat(shippingFeeInput.value) || 0;
@@ -389,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLiveTotal();
     });
 
-    // Enviar Nova Venda ao MySQL
+    // Enviar Venda
     saleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -440,17 +475,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('VENDA REGISTRADA COM SUCESSO!', 'success');
                 resetForm();
                 await loadSales();
-                if (isCredit) {
-                    switchTab('tab-fiados');
-                } else {
-                    switchTab('tab-vista');
-                }
+                if (isCredit) switchTab('tab-fiados');
+                else switchTab('tab-vista');
             } else {
-                throw new Error('Falha ao registrar venda');
+                throw new Error();
             }
         } catch (err) {
-            console.error(err);
-            showToast('Erro ao salvar venda no MySQL!', 'danger');
+            console.warn('Erro ao salvar no MySQL. Registrando venda localmente no LocalStorage.');
+            sales.push(newSale);
+            localStorage.setItem('ligapods_sales', JSON.stringify(sales));
+            showToast('VENDA SALVA LOCALMENTE (OFFLINE)!', 'success');
+            resetForm();
+            renderDashboard();
+            if (isCredit) switchTab('tab-fiados');
+            else switchTab('tab-vista');
         }
     });
 
@@ -709,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === FUNÇÕES AUXILIARES ===
 
-    // Liquidar Fiado no MySQL (Receber)
+    // Liquidar Fiado (Receber)
     async function payCreditSale(id) {
         const sale = sales.find(s => s.id === id);
         if (sale) {
@@ -728,13 +766,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.ok) {
-                    showToast(`DÉBITO DE ${sale.customer.toUpperCase()} RECEBIDO!`, 'success');
+                    showToast(`DÉBITO DE ${sale.customer.toUpperCase()} RECEBIDO NO MYSQL!`, 'success');
                     await loadSales();
                 } else {
                     throw new Error();
                 }
             } catch (err) {
-                showToast('Erro ao receber venda no MySQL!', 'danger');
+                console.warn('Backend indisponível. Atualizando venda como paga localmente.');
+                const idx = sales.findIndex(s => s.id === id);
+                if (idx !== -1) {
+                    sales[idx] = updatedSale;
+                    localStorage.setItem('ligapods_sales', JSON.stringify(sales));
+                    showToast(`DÉBITO DE ${sale.customer.toUpperCase()} RECEBIDO LOCALMENTE!`, 'success');
+                    renderDashboard();
+                }
             }
         }
     }
@@ -748,16 +793,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return base;
     }
 
+    // Formatação BRL
     function formatCurrency(value) {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     }
 
+    // Formatação Data
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         const parts = dateStr.split('-');
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
 
+    // Formatação Data/Hora
     function formatDateTime(isoString) {
         const d = new Date(isoString);
         const day = String(d.getDate()).padStart(2, '0');
@@ -797,6 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3500);
     }
 
+    // Beep Retrô 8-bit
     function playBeep(type) {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -939,7 +988,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error();
             }
         } catch (err) {
-            showToast('Erro ao atualizar venda no banco!', 'danger');
+            console.warn('API /api/sales indisponível. Editando localmente no LocalStorage.');
+            sales[index] = updatedSale;
+            localStorage.setItem('ligapods_sales', JSON.stringify(sales));
+            showToast('VENDA ATUALIZADA LOCALMENTE (OFFLINE)!', 'success');
+            editModal.classList.add('hidden');
+            renderDashboard();
         }
     });
 
@@ -957,7 +1011,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error();
                 }
             } catch (err) {
-                showToast('Erro ao excluir venda no MySQL!', 'danger');
+                console.warn('API /api/sales indisponível. Excluindo localmente no LocalStorage.');
+                sales = sales.filter(s => s.id !== id);
+                localStorage.setItem('ligapods_sales', JSON.stringify(sales));
+                showToast('VENDA EXCLUÍDA LOCALMENTE (OFFLINE)!', 'success');
+                renderDashboard();
             }
         }
     }

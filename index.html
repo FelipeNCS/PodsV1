@@ -27,11 +27,11 @@
             <img src="logo.jpg" alt="LIGA PODS Logo" class="logo-img">
             <form id="login-form" autocomplete="off">
                 <div class="form-group" style="margin-bottom: 15px; text-align: left;">
-                    <label for="login-username" style="font-family:'Press Start 2P'; font-size:10px; color:#ffffff; margin-bottom:8px; display:block;">USUÁRIO *</label>
+                    <label for="login-username" style="font-family:'Orbitron', sans-serif; font-size:12px; font-weight:700; color:#ffffff; margin-bottom:8px; display:block;">USUÁRIO *</label>
                     <input type="text" id="login-username" placeholder="Digite seu usuário..." required style="width: 100%;">
                 </div>
                 <div class="form-group" style="margin-bottom: 25px; text-align: left;">
-                    <label for="login-password" style="font-family:'Press Start 2P'; font-size:10px; color:#ffffff; margin-bottom:8px; display:block;">SENHA *</label>
+                    <label for="login-password" style="font-family:'Orbitron', sans-serif; font-size:12px; font-weight:700; color:#ffffff; margin-bottom:8px; display:block;">SENHA *</label>
                     <input type="password" id="login-password" placeholder="Digite sua senha..." required style="width: 100%;">
                 </div>
                 <button type="submit" class="pixel-btn pulse-glow" style="width: 100%;">ENTRAR NO GERENCIAMENTO</button>
@@ -94,8 +94,27 @@
             </div>
         </div>
 
-        <!-- CONTEÚDO DAS ABAS -->
-        <main class="dash-content">
+    <!-- PAINEL DE GERENCIAMENTO (Dashboard) -->
+    <div id="dashboard-screen" class="screen">
+        <header class="dash-header pixel-border-bottom">
+            <div class="header-logo">
+                <img src="logo.jpg" alt="LIGA PODS Logo" class="logo-img-small">
+            </div>
+            <!-- Categorias no topo da página (Navegação Principal) -->
+            <nav class="dash-nav">
+                <button class="nav-tab active" data-tab="tab-vender">📦 VENDER POD</button>
+                <button class="nav-tab" data-tab="tab-fiados">⏳ PRODUTOS FIADOS</button>
+                <button class="nav-tab" data-tab="tab-vista">💵 VENDAS À VISTA</button>
+                <button class="nav-tab" data-tab="tab-clientes">👥 CLIENTES</button>
+                <button class="nav-tab" data-tab="tab-config">⚙️ NOVO ADMIN</button>
+            </nav>
+            <button id="btn-back-home" class="pixel-btn-logout">Logout</button>
+        </header>
+
+        <!-- LAYOUT DE DUAS COLUNAS: CONTEÚDO E SIDEBAR DE ESTATÍSTICAS -->
+        <div class="dash-main-layout">
+            <!-- CONTEÚDO DAS ABAS (Esquerda) -->
+            <main class="dash-content">
             <!-- TAB 1: VENDER POD -->
             <section id="tab-vender" class="tab-panel active">
                 <div class="form-container pixel-border-single">
@@ -286,7 +305,57 @@
                 </div>
             </section>
         </main>
+
+        <!-- SIDEBAR DE ESTATÍSTICAS E VALORES (Direita) -->
+        <aside class="dash-sidebar">
+            <!-- Bloco 1: Estatísticas Gerais -->
+            <div class="sidebar-card pixel-border-single">
+                <h3 class="sidebar-card-title">FATURAMENTO GERAL</h3>
+                <div class="sidebar-stat-item">
+                    <span class="stat-label">À VISTA:</span>
+                    <span id="stat-cash-total" class="stat-value text-green">R$ 0,00</span>
+                </div>
+                <div class="sidebar-stat-item">
+                    <span class="stat-label">FIADO ATIVO:</span>
+                    <span id="stat-credit-total" class="stat-value text-yellow">R$ 0,00</span>
+                </div>
+                <div class="sidebar-stat-item">
+                    <span class="stat-label">ALERTA HOJE:</span>
+                    <span id="stat-due-today" class="stat-value text-red blink">0</span>
+                </div>
+            </div>
+
+            <!-- Bloco 2: Balanço dos Sócios -->
+            <div class="sidebar-card pixel-border-single">
+                <h3 class="sidebar-card-title">SALDO DOS SÓCIOS</h3>
+                
+                <div class="sidebar-partner-item">
+                    <span class="partner-stat-label">LIPE</span>
+                    <div class="partner-val-box">
+                        <span id="partner-total-lipe" class="partner-stat-value text-green">R$ 0,00</span>
+                        <span id="partner-credit-lipe" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-partner-item">
+                    <span class="partner-stat-label">ANNA</span>
+                    <div class="partner-val-box">
+                        <span id="partner-total-anna" class="partner-stat-value text-green">R$ 0,00</span>
+                        <span id="partner-credit-anna" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-partner-item">
+                    <span class="partner-stat-label">LEON</span>
+                    <div class="partner-val-box">
+                        <span id="partner-total-leon" class="partner-stat-value text-green">R$ 0,00</span>
+                        <span id="partner-credit-leon" class="partner-stat-sub">(Fiado: R$ 0,00)</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
     </div>
+</div>
 
     <!-- Notification Toast -->
     <div id="toast" class="toast-container pixel-border-single hidden">

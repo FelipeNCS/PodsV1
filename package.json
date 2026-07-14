@@ -1,0 +1,9 @@
+{
+  "name": "liga-pods-system",
+  "version": "1.0.0",
+  "description": "Liga Pods Sales Management System",
+  "main": "index.html",
+  "dependencies": {
+    "mysql2": "^3.9.2"
+  }
+}

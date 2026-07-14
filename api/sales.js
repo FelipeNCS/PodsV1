@@ -1,4 +1,4 @@
-const pool = require('./db');
+const { pool, ensureTablesExist } = require('./db');
 
 module.exports = async (req, res) => {
     // Configurações de CORS para Vercel
@@ -16,6 +16,9 @@ module.exports = async (req, res) => {
     }
 
     try {
+        // Garantir que as tabelas existem antes de qualquer SELECT/INSERT
+        await ensureTablesExist();
+
         if (req.method === 'GET') {
             // Listar todas as vendas do banco
             const [rows] = await pool.query('SELECT * FROM sales ORDER BY id DESC');

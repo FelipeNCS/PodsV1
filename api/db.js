@@ -8,8 +8,12 @@ if (!connectionString) {
 
 const pool = mysql.createPool(connectionString || 'mysql://root:JEAjJFODqIddekpJtUmFndQSXWZELTff@localhost:3306/railway');
 
-// Função para inicializar tabelas e administrador padrão
-async function initDb() {
+let initialized = false;
+
+// Função para garantir que as tabelas existem antes de qualquer query nas APIs
+async function ensureTablesExist() {
+    if (initialized) return;
+
     try {
         const connection = await pool.getConnection();
         
@@ -47,17 +51,19 @@ async function initDb() {
                 'INSERT INTO admins (username, password) VALUES (?, ?)',
                 ['felipencs', '01102030']
             );
-            console.log('Administrador inicial felipencs cadastrado com sucesso!');
+            console.log('Administrador inicial felipencs cadastrado.');
         }
 
         connection.release();
-        console.log('Estrutura de tabelas do MySQL verificada.');
+        initialized = true;
+        console.log('Tabelas do MySQL garantidas e inicializadas.');
     } catch (err) {
         console.error('Falha ao conectar ou inicializar o MySQL na Railway:', err);
+        throw err;
     }
 }
 
-// Rodar verificação na inicialização
-initDb();
-
-module.exports = pool;
+module.exports = {
+    pool,
+    ensureTablesExist
+};

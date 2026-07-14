@@ -1,4 +1,4 @@
-const pool = require('./db');
+const { pool, ensureTablesExist } = require('./db');
 
 module.exports = async (req, res) => {
     // Configurações de CORS para Vercel
@@ -18,6 +18,9 @@ module.exports = async (req, res) => {
     const { action } = req.query;
 
     try {
+        // Garantir que as tabelas existem antes de fazer qualquer SELECT/INSERT
+        await ensureTablesExist();
+
         if (req.method === 'POST') {
             if (action === 'login') {
                 // Lógica de Autenticação do Administrador no MySQL

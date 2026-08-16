@@ -1371,5 +1371,82 @@ body {
     padding-top: 8px;
 }
 
+/* Barra Seletora de Modo de Venda e Comanda */
+.sale-mode-selector-box {
+    background: linear-gradient(135deg, rgba(20, 15, 30, 0.95), rgba(10, 10, 15, 0.95));
+    border: 2px solid #ff003c;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(255, 0, 60, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sale-mode-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    color: #00e5ff;
+    letter-spacing: 0.8px;
+}
+
+.sale-mode-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.mode-select-btn {
+    flex: 1;
+    min-width: 220px;
+    background-color: #12121c;
+    border: 2px solid #33334d;
+    color: #a0a0b0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 12px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.mode-select-btn:hover {
+    border-color: #ff3366;
+    color: #ffffff;
+    background-color: #22101e;
+    box-shadow: 0 0 10px rgba(255, 0, 60, 0.4);
+}
+
+.mode-select-btn.active {
+    background: linear-gradient(90deg, #ff003c, #ff3366);
+    border-color: #ffffff;
+    color: #ffffff;
+    box-shadow: 0 0 18px rgba(255, 0, 60, 0.8);
+    transform: scale(1.01);
+}
+
+.mode-select-btn.highlight-split {
+    border-color: #ffcc00;
+}
+
+.mode-select-btn.highlight-split:hover {
+    border-color: #ffcc00;
+    background-color: #2a2000;
+    color: #ffea70;
+}
+
+.mode-select-btn.highlight-split.active {
+    background: linear-gradient(90deg, #ffaa00, #ff0055);
+    border-color: #ffffff;
+    color: #ffffff;
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.7);
+}
+
+
 
 

@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="index.css?v=2.0">
 </head>
 <body>
     <!-- Background Canvas para Fumaça e Partículas -->
@@ -64,7 +64,17 @@
             <!-- TAB 1: VENDER POD -->
             <section id="tab-vender" class="tab-panel active">
                 <div class="form-container pixel-border-single">
-                    <h2 class="section-title">> REGISTRAR NOVA VENDA</h2>
+                    <h2 class="section-title">> REGISTRAR NOVA VENDA (FRENTE DE CAIXA PDV)</h2>
+                    
+                    <!-- SELETOR DESTACADO DE MODO DE VENDA -->
+                    <div class="sale-mode-selector-box pixel-border-single">
+                        <span class="sale-mode-label">SELECIONE O TIPO DE VENDA:</span>
+                        <div class="sale-mode-buttons">
+                            <button type="button" id="btn-mode-single" class="mode-select-btn active">👤 VENDA INDIVIDUAL (1 CLIENTE)</button>
+                            <button type="button" id="btn-mode-split" class="mode-select-btn highlight-split">🍕 RACHAR PRODUTO COM OUTROS CLIENTES</button>
+                        </div>
+                    </div>
+
                     <form id="sale-form" autocomplete="off">
                         <div class="form-row">
                             <div class="form-group">
@@ -101,7 +111,7 @@
                             </div>
                         </div>
 
-                        <!-- Campos do Cliente Principal (Utilizados se não for racha, ou cliente líder) -->
+                        <!-- Campos do Cliente Principal (Utilizados no Modo Individual) -->
                         <div id="single-customer-fields" class="form-row">
                             <div class="form-group">
                                 <label for="customer-name">NOME DO CLIENTE *</label>
@@ -126,20 +136,14 @@
                                     <option value="Leon">Leon</option>
                                 </select>
                             </div>
-                            <div class="form-group checkbox-group">
+                            <div class="form-group checkbox-group" id="single-credit-checkbox-group">
                                 <label class="pixel-checkbox-label">
                                     <input type="checkbox" id="is-credit">
                                     <span class="custom-checkbox"></span>
                                     VENDA FIADA?
                                 </label>
                             </div>
-                            <div class="form-group checkbox-group">
-                                <label class="pixel-checkbox-label">
-                                    <input type="checkbox" id="is-split">
-                                    <span class="custom-checkbox"></span>
-                                    🍕 RACHAR PRODUTO?
-                                </label>
-                            </div>
+                            <input type="checkbox" id="is-split" style="display:none;">
                         </div>
 
                         <!-- Campos dinâmicos do Fiado Simples -->
@@ -184,7 +188,7 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="pixel-btn success-glow">CONFIRMAR VENDA [ENTER]</button>
+                            <button type="submit" id="btn-submit-sale" class="pixel-btn success-glow">CONFIRMAR VENDA [ENTER]</button>
                             <button type="reset" id="btn-reset-form" class="pixel-btn-danger">LIMPAR</button>
                         </div>
                     </form>
@@ -519,15 +523,15 @@
             <form id="comanda-checkout-form" autocomplete="off">
                 <input type="hidden" id="checkout-comanda-id">
 
-                <div class="form-row" style="margin-top: 15px;">
-                    <div class="form-group checkbox-group">
-                        <label class="pixel-checkbox-label">
-                            <input type="checkbox" id="checkout-is-split">
-                            <span class="custom-checkbox"></span>
-                            🍕 RACHAR ESTA COMANDA ENTRE VÁRIOS CLIENTES?
-                        </label>
+                <!-- SELETOR DE MODO DE FECHAMENTO DA COMANDA -->
+                <div class="sale-mode-selector-box pixel-border-single" style="margin-top: 15px; margin-bottom: 15px;">
+                    <span class="sale-mode-label">COMO DESEJA FECHAR ESTA COMANDA?</span>
+                    <div class="sale-mode-buttons">
+                        <button type="button" id="btn-comanda-mode-single" class="mode-select-btn active">💵 FECHAMENTO INDIVIDUAL</button>
+                        <button type="button" id="btn-comanda-mode-split" class="mode-select-btn highlight-split">🍕 RACHAR COMANDA ENTRE CLIENTES</button>
                     </div>
                 </div>
+                <input type="checkbox" id="checkout-is-split" style="display:none;">
 
                 <!-- Painel Simples (Sem Racha - Pagamento Individual) -->
                 <div id="checkout-single-panel" class="form-row">
@@ -575,13 +579,13 @@
                 </div>
 
                 <div class="form-actions" style="margin-top: 20px;">
-                    <button type="submit" class="pixel-btn success-glow">CONFIRMAR FECHAMENTO E LANÇAR DÉBITOS</button>
+                    <button type="submit" id="btn-submit-checkout" class="pixel-btn success-glow">CONFIRMAR FECHAMENTO E LANÇAR DÉBITOS</button>
                     <button type="button" id="btn-cancel-checkout" class="pixel-btn-danger">CANCELAR</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=2.0"></script>
 </body>
 </html>

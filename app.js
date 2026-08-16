@@ -757,30 +757,44 @@ document.addEventListener('DOMContentLoaded', () => {
             splitParticipants.push({
                 name: '',
                 contact: '',
-                payType: 'credit',
-                shareAmount: 0,
-                dueDate: defaultDue,
-                interestRate: globalInterest
-            });
-            renderSplitParticipants();
-        });
-    }
+    // === SELETORES DE MODO DE VENDA NO PDV ===
+    const btnModeSingle = document.getElementById('btn-mode-single');
+    const btnModeSplit = document.getElementById('btn-mode-split');
+    const btnSubmitSale = document.getElementById('btn-submit-sale');
+    const singleCreditGroup = document.getElementById('single-credit-checkbox-group');
 
-    // Toggle de Rachar Produto
-    isSplitCheckbox.addEventListener('change', () => {
-        if (isSplitCheckbox.checked) {
-            splitSection.classList.remove('hidden');
+    function setSaleMode(mode) {
+        if (mode === 'split') {
+            isSplitCheckbox.checked = true;
+            if (btnModeSplit) btnModeSplit.classList.add('active');
+            if (btnModeSingle) btnModeSingle.classList.remove('active');
+            if (splitSection) splitSection.classList.remove('hidden');
             if (singleCustomerFields) singleCustomerFields.classList.add('hidden');
             if (creditFields) creditFields.classList.add('hidden');
+            if (singleCreditGroup) singleCreditGroup.classList.add('hidden');
+            if (btnSubmitSale) btnSubmitSale.textContent = '🍕 CONFIRMAR RACHA E LANÇAR DÉBITOS [ENTER]';
             initSplitParticipants();
         } else {
-            splitSection.classList.add('hidden');
+            isSplitCheckbox.checked = false;
+            if (btnModeSingle) btnModeSingle.classList.add('active');
+            if (btnModeSplit) btnModeSplit.classList.remove('active');
+            if (splitSection) splitSection.classList.add('hidden');
             if (singleCustomerFields) singleCustomerFields.classList.remove('hidden');
-            if (isCreditCheckbox.checked) {
+            if (singleCreditGroup) singleCreditGroup.classList.remove('hidden');
+            if (isCreditCheckbox.checked && creditFields) {
                 creditFields.classList.remove('hidden');
             }
+            if (btnSubmitSale) btnSubmitSale.textContent = 'CONFIRMAR VENDA [ENTER]';
         }
         updateLiveTotal();
+    }
+
+    if (btnModeSingle) btnModeSingle.addEventListener('click', () => setSaleMode('single'));
+    if (btnModeSplit) btnModeSplit.addEventListener('click', () => setSaleMode('split'));
+
+    // Toggle de Rachar Produto (Checkbox oculto sincronizado)
+    isSplitCheckbox.addEventListener('change', () => {
+        setSaleMode(isSplitCheckbox.checked ? 'split' : 'single');
     });
 
     // === REGISTRO DE VENDAS (PDV) ===
@@ -1004,10 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetForm() {
         saleForm.reset();
-        isSplitCheckbox.checked = false;
-        splitSection.classList.add('hidden');
-        if (singleCustomerFields) singleCustomerFields.classList.remove('hidden');
-        creditFields.classList.add('hidden');
+        setSaleMode('single');
         dueDateInput.required = false;
         liveTotalValue.textContent = 'R$ 0,00';
     }
@@ -1234,20 +1245,42 @@ document.addEventListener('DOMContentLoaded', () => {
         checkoutTotalVal.textContent = formatCurrency(total);
         if (checkoutSplitTotalBadge) checkoutSplitTotalBadge.textContent = `Total: ${formatCurrency(total)}`;
 
-        checkoutIsSplit.checked = isSplitInitially;
-        if (isSplitInitially) {
-            checkoutSplitPanel.classList.remove('hidden');
-            checkoutSinglePanel.classList.add('hidden');
-            initCheckoutSplit(comanda, total);
-        } else {
-            checkoutSplitPanel.classList.add('hidden');
-            checkoutSinglePanel.classList.remove('hidden');
-            checkoutIsCredit.checked = false;
-            checkoutCreditFields.classList.add('hidden');
-        }
-
+        setComandaCheckoutMode(isSplitInitially ? 'split' : 'single');
         comandaCheckoutModal.classList.remove('hidden');
     }
+
+    const btnComandaModeSingle = document.getElementById('btn-comanda-mode-single');
+    const btnComandaModeSplit = document.getElementById('btn-comanda-mode-split');
+    const btnSubmitCheckout = document.getElementById('btn-submit-checkout');
+
+    function setComandaCheckoutMode(mode) {
+        const cid = parseInt(checkoutComandaId.value);
+        const comanda = comandas.find(c => c.id === cid);
+        const total = comanda ? comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0) : 0;
+
+        if (mode === 'split') {
+            checkoutIsSplit.checked = true;
+            if (btnComandaModeSplit) btnComandaModeSplit.classList.add('active');
+            if (btnComandaModeSingle) btnComandaModeSingle.classList.remove('active');
+            if (checkoutSplitPanel) checkoutSplitPanel.classList.remove('hidden');
+            if (checkoutSinglePanel) checkoutSinglePanel.classList.add('hidden');
+            if (btnSubmitCheckout) btnSubmitCheckout.textContent = '🍕 CONFIRMAR RACHA DA COMANDA E LANÇAR DÉBITOS';
+            if (comanda) initCheckoutSplit(comanda, total);
+        } else {
+            checkoutIsSplit.checked = false;
+            if (btnComandaModeSingle) btnComandaModeSingle.classList.add('active');
+            if (btnComandaModeSplit) btnComandaModeSplit.classList.remove('active');
+            if (checkoutSplitPanel) checkoutSplitPanel.classList.add('hidden');
+            if (checkoutSinglePanel) checkoutSinglePanel.classList.remove('hidden');
+            if (checkoutIsCredit.checked && checkoutCreditFields) {
+                checkoutCreditFields.classList.remove('hidden');
+            }
+            if (btnSubmitCheckout) btnSubmitCheckout.textContent = 'CONFIRMAR FECHAMENTO E LANÇAR DÉBITOS';
+        }
+    }
+
+    if (btnComandaModeSingle) btnComandaModeSingle.addEventListener('click', () => setComandaCheckoutMode('single'));
+    if (btnComandaModeSplit) btnComandaModeSplit.addEventListener('click', () => setComandaCheckoutMode('split'));
 
     if (btnCancelCheckout) {
         btnCancelCheckout.addEventListener('click', () => {
@@ -1269,19 +1302,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     checkoutIsSplit.addEventListener('change', () => {
-        const cid = parseInt(checkoutComandaId.value);
-        const comanda = comandas.find(c => c.id === cid);
-        if (!comanda) return;
-        const total = comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0);
-
-        if (checkoutIsSplit.checked) {
-            checkoutSplitPanel.classList.remove('hidden');
-            checkoutSinglePanel.classList.add('hidden');
-            initCheckoutSplit(comanda, total);
-        } else {
-            checkoutSplitPanel.classList.add('hidden');
-            checkoutSinglePanel.classList.remove('hidden');
-        }
+        setComandaCheckoutMode(checkoutIsSplit.checked ? 'split' : 'single');
     });
 
     function initCheckoutSplit(comanda, total) {

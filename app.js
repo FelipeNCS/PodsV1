@@ -757,6 +757,14 @@ document.addEventListener('DOMContentLoaded', () => {
             splitParticipants.push({
                 name: '',
                 contact: '',
+                payType: 'credit',
+                shareAmount: 0,
+                dueDate: defaultDue,
+                interestRate: globalInterest
+            });
+            renderSplitParticipants();
+        });
+    }
     // === SELETORES DE MODO DE VENDA NO PDV ===
     const btnModeSingle = document.getElementById('btn-mode-single');
     const btnModeSplit = document.getElementById('btn-mode-split');

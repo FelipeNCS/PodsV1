@@ -48,6 +48,7 @@
             <!-- Categorias no topo da página (Navegação Principal) -->
             <nav class="dash-nav">
                 <button class="nav-tab active" data-tab="tab-vender">📦 VENDER POD</button>
+                <button class="nav-tab" data-tab="tab-comandas">📋 COMANDAS</button>
                 <button class="nav-tab" data-tab="tab-fiados">⏳ PRODUTOS FIADOS</button>
                 <button class="nav-tab" data-tab="tab-vista">💵 VENDAS À VISTA</button>
                 <button class="nav-tab" data-tab="tab-clientes">👥 CLIENTES</button>
@@ -82,7 +83,17 @@
                                     <option value="Lost Mary MO5000 Watermelon Cherry">
                                     <option value="Oxbar G8000 Cherry Lime">
                                     <option value="Oxbar G8000 Mad Blue">
+                                    <option value="Cerveja Heineken Long Neck">
+                                    <option value="Cerveja Corona Long Neck">
+                                    <option value="Red Bull Energy Drink">
+                                    <option value="Vodka Absolut Dose/Combo">
+                                    <option value="Gin Tanqueray Dose/Combo">
+                                    <option value="Whisky Red Label Dose">
+                                    <option value="Água Mineral 500ml">
+                                    <option value="Refrigerante Lata">
                                 </datalist>
+                                <!-- Datalist dinâmico com todos os clientes cadastrados -->
+                                <datalist id="customers-datalist"></datalist>
                             </div>
                             <div class="form-group">
                                 <label for="product-price">VALOR DO PRODUTO (R$) *</label>
@@ -90,10 +101,11 @@
                             </div>
                         </div>
 
-                        <div class="form-row">
+                        <!-- Campos do Cliente Principal (Utilizados se não for racha, ou cliente líder) -->
+                        <div id="single-customer-fields" class="form-row">
                             <div class="form-group">
                                 <label for="customer-name">NOME DO CLIENTE *</label>
-                                <input type="text" id="customer-name" placeholder="Ex: João Silva" required>
+                                <input type="text" id="customer-name" list="customers-datalist" placeholder="Ex: João Silva" required>
                             </div>
                             <div class="form-group">
                                 <label for="customer-contact">CONTATO (WHATSAPP/TELEFONE)</label>
@@ -121,9 +133,16 @@
                                     VENDA FIADA?
                                 </label>
                             </div>
+                            <div class="form-group checkbox-group">
+                                <label class="pixel-checkbox-label">
+                                    <input type="checkbox" id="is-split">
+                                    <span class="custom-checkbox"></span>
+                                    🍕 RACHAR PRODUTO?
+                                </label>
+                            </div>
                         </div>
 
-                        <!-- Campos dinâmicos do Fiado -->
+                        <!-- Campos dinâmicos do Fiado Simples -->
                         <div id="credit-fields" class="form-row-credit hidden">
                             <div class="form-group">
                                 <label for="due-date">DATA DE PAGAMENTO *</label>
@@ -138,11 +157,81 @@
                             </div>
                         </div>
 
+                        <!-- Seção Dinâmica de Racha de Produto no PDV -->
+                        <div id="split-section" class="split-container pixel-border-single hidden">
+                            <div class="split-header">
+                                <div class="split-title-box">
+                                    <h3 class="split-title">🍕 DIVISÃO DE PRODUTO ENTRE CLIENTES</h3>
+                                    <span class="split-badge-info" id="split-total-badge">Total da Venda: R$ 0,00</span>
+                                </div>
+                                <div class="split-mode-controls">
+                                    <button type="button" id="btn-split-equal" class="pixel-btn-small active">DIVIDIR IGUAL (1/N)</button>
+                                    <button type="button" id="btn-split-custom" class="pixel-btn-small">VALORES LIVRES</button>
+                                </div>
+                            </div>
+
+                            <div id="split-participants-container" class="split-cards-list">
+                                <!-- Cards dinâmicos gerados via JS -->
+                            </div>
+
+                            <div class="split-footer">
+                                <button type="button" id="btn-add-split-participant" class="pixel-btn-outline">+ ADICIONAR CLIENTE AO RACHA</button>
+                                <div class="split-balance-bar">
+                                    <span>Distribuído: <strong id="split-sum-distributed">R$ 0,00</strong></span>
+                                    <span>Restante: <strong id="split-sum-remaining" class="text-green">R$ 0,00</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-actions">
                             <button type="submit" class="pixel-btn success-glow">CONFIRMAR VENDA [ENTER]</button>
                             <button type="reset" id="btn-reset-form" class="pixel-btn-danger">LIMPAR</button>
                         </div>
                     </form>
+                </div>
+            </section>
+
+            <!-- TAB 1.5: COMANDAS -->
+            <section id="tab-comandas" class="tab-panel">
+                <div class="form-container pixel-border-single" style="margin-bottom: 25px;">
+                    <h2 class="section-title">> ABRIR NOVA COMANDA / MESA</h2>
+                    <form id="open-comanda-form" autocomplete="off">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="comanda-number">NÚMERO / MESA / IDENTIFICADOR *</label>
+                                <input type="text" id="comanda-number" placeholder="Ex: Comanda 01 ou Mesa 4" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="comanda-customer">CLIENTE PRINCIPAL *</label>
+                                <input type="text" id="comanda-customer" list="customers-datalist" placeholder="Ex: Lucas Silva" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="comanda-contact">WHATSAPP / CONTATO</label>
+                                <input type="text" id="comanda-contact" placeholder="Ex: 47999999999">
+                            </div>
+                            <div class="form-group">
+                                <label for="comanda-partner">SÓCIO RESPONSÁVEL *</label>
+                                <select id="comanda-partner" required>
+                                    <option value="Lipe" selected>Lipe</option>
+                                    <option value="Anna">Anna</option>
+                                    <option value="Leon">Leon</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions" style="margin-top: 10px;">
+                            <button type="submit" class="pixel-btn success-glow">+ ABRIR COMANDA</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="table-container pixel-border-single">
+                    <div class="comandas-header-bar">
+                        <h2 class="section-title" style="margin-bottom: 0;">> COMANDAS ABERTAS EM ATENDIMENTO</h2>
+                        <span id="comandas-count-badge" class="badge badge-today">0 COMANDAS ATIVAS</span>
+                    </div>
+                    <div id="comandas-grid" class="comandas-grid-container">
+                        <!-- Cards de comandas abertas gerados dinamicamente via JS -->
+                    </div>
                 </div>
             </section>
 
@@ -381,6 +470,113 @@
                 <div class="form-actions">
                     <button type="submit" class="pixel-btn success-glow">SALVAR</button>
                     <button type="button" id="btn-cancel-edit" class="pixel-btn-danger">CANCELAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ADICIONAR ITEM NA COMANDA -->
+    <div id="comanda-add-item-modal" class="modal-overlay hidden">
+        <div class="modal-content pixel-border-double">
+            <h2 class="section-title">> ADICIONAR PRODUTO NA COMANDA</h2>
+            <form id="comanda-add-item-form" autocomplete="off">
+                <input type="hidden" id="modal-comanda-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modal-item-product">PRODUTO *</label>
+                        <input type="text" id="modal-item-product" list="products-datalist" placeholder="Ex: Ignite V50 Watermelon Ice" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-item-price">VALOR UNITÁRIO (R$) *</label>
+                        <input type="number" id="modal-item-price" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group" style="max-width: 130px;">
+                        <label for="modal-item-qty">QTD *</label>
+                        <input type="number" id="modal-item-qty" min="1" value="1" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="pixel-btn success-glow">ADICIONAR À COMANDA</button>
+                    <button type="button" id="btn-cancel-add-item" class="pixel-btn-danger">CANCELAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL FECHAR / RACHAR COMANDA -->
+    <div id="comanda-checkout-modal" class="modal-overlay hidden">
+        <div class="modal-content pixel-border-double" style="max-width: 820px; width: 95%;">
+            <h2 class="section-title" id="checkout-modal-title">> FECHAMENTO DA COMANDA</h2>
+            <div class="checkout-summary-box pixel-border-single">
+                <div id="checkout-comanda-info" class="checkout-info-header"></div>
+                <div id="checkout-comanda-items-summary" class="checkout-items-preview"></div>
+                <div class="checkout-total-row">
+                    <span>TOTAL GERAL DA COMANDA:</span>
+                    <span id="checkout-total-val" class="text-green font-bold">R$ 0,00</span>
+                </div>
+            </div>
+
+            <form id="comanda-checkout-form" autocomplete="off">
+                <input type="hidden" id="checkout-comanda-id">
+
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="form-group checkbox-group">
+                        <label class="pixel-checkbox-label">
+                            <input type="checkbox" id="checkout-is-split">
+                            <span class="custom-checkbox"></span>
+                            🍕 RACHAR ESTA COMANDA ENTRE VÁRIOS CLIENTES?
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Painel Simples (Sem Racha - Pagamento Individual) -->
+                <div id="checkout-single-panel" class="form-row">
+                    <div class="form-group checkbox-group">
+                        <label class="pixel-checkbox-label">
+                            <input type="checkbox" id="checkout-is-credit">
+                            <span class="custom-checkbox"></span>
+                            LANÇAR COMO FIADO (DÉBITO)?
+                        </label>
+                    </div>
+                    <div id="checkout-credit-fields" class="form-row-credit hidden" style="width: 100%;">
+                        <div class="form-group">
+                            <label for="checkout-due-date">DATA DE PAGAMENTO *</label>
+                            <input type="date" id="checkout-due-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="checkout-interest-rate">JUROS (%)</label>
+                            <input type="number" id="checkout-interest-rate" min="0" max="100" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Painel Racha da Comanda -->
+                <div id="checkout-split-panel" class="split-container pixel-border-single hidden" style="margin-top: 15px;">
+                    <div class="split-header">
+                        <div class="split-title-box">
+                            <h3 class="split-title">🍕 DIVISÃO DA COMANDA ENTRE PARTICIPANTES</h3>
+                            <span class="split-badge-info" id="checkout-split-total-badge">Total: R$ 0,00</span>
+                        </div>
+                        <div class="split-mode-controls">
+                            <button type="button" id="btn-checkout-split-equal" class="pixel-btn-small active">DIVIDIR IGUAL (1/N)</button>
+                            <button type="button" id="btn-checkout-split-custom" class="pixel-btn-small">VALORES LIVRES</button>
+                        </div>
+                    </div>
+
+                    <div id="checkout-split-participants" class="split-cards-list"></div>
+
+                    <div class="split-footer">
+                        <button type="button" id="btn-add-checkout-participant" class="pixel-btn-outline">+ ADICIONAR CLIENTE AO RACHA</button>
+                        <div class="split-balance-bar">
+                            <span>Distribuído: <strong id="checkout-split-sum-dist">R$ 0,00</strong></span>
+                            <span>Restante: <strong id="checkout-split-sum-rem" class="text-green">R$ 0,00</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="pixel-btn success-glow">CONFIRMAR FECHAMENTO E LANÇAR DÉBITOS</button>
+                    <button type="button" id="btn-cancel-checkout" class="pixel-btn-danger">CANCELAR</button>
                 </div>
             </form>
         </div>

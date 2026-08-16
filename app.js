@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // === ESTADO DA APLICAÇÃO ===
     let sales = [];
+    let comandas = JSON.parse(localStorage.getItem('ligapods_comandas')) || [];
 
     // Produtos populares e preços padrão para auto-preenchimento
     const productPrices = {
@@ -10,8 +11,27 @@ document.addEventListener('DOMContentLoaded', () => {
         'Elf Bar BC5000': 90.00,
         'Waka SoPro DM8000': 140.00,
         'Lost Mary MO5000': 100.00,
-        'Oxbar G8000': 110.00
+        'Oxbar G8000': 110.00,
+        'Cerveja Heineken': 15.00,
+        'Cerveja Corona': 16.00,
+        'Red Bull': 18.00,
+        'Vodka Absolut': 220.00,
+        'Gin Tanqueray': 240.00,
+        'Whisky Red Label': 190.00,
+        'Água Mineral': 6.00,
+        'Refrigerante': 8.00
     };
+
+    // Estado do Racha no PDV
+    let splitMode = 'equal'; // 'equal' ou 'custom'
+    let splitParticipants = [
+        { name: '', contact: '', payType: 'credit', shareAmount: 0, dueDate: '', interestRate: 0 },
+        { name: '', contact: '', payType: 'credit', shareAmount: 0, dueDate: '', interestRate: 0 }
+    ];
+
+    // Estado do Racha no Fechamento de Comanda
+    let checkoutSplitMode = 'equal';
+    let checkoutSplitParticipants = [];
 
     // === ELEMENTOS DO DOM ===
     // Telas
@@ -30,23 +50,77 @@ document.addEventListener('DOMContentLoaded', () => {
     const navTabs = document.querySelectorAll('.nav-tab');
     const tabPanels = document.querySelectorAll('.tab-panel');
 
-    // Formulário de Venda
+    // Formulário de Venda (PDV)
     const saleForm = document.getElementById('sale-form');
     const productNameInput = document.getElementById('product-name');
     const productPriceInput = document.getElementById('product-price');
+    const singleCustomerFields = document.getElementById('single-customer-fields');
     const customerNameInput = document.getElementById('customer-name');
     const customerContactInput = document.getElementById('customer-contact');
+    const customersDatalist = document.getElementById('customers-datalist');
     const shippingFeeInput = document.getElementById('shipping-fee');
     const partnerSelect = document.getElementById('partner-select');
     const isCreditCheckbox = document.getElementById('is-credit');
+    const isSplitCheckbox = document.getElementById('is-split');
     const creditFields = document.getElementById('credit-fields');
     const dueDateInput = document.getElementById('due-date');
     const interestRateInput = document.getElementById('interest-rate');
     const btnResetForm = document.getElementById('btn-reset-form');
 
+    // Elementos de Racha de Produto (PDV)
+    const splitSection = document.getElementById('split-section');
+    const splitTotalBadge = document.getElementById('split-total-badge');
+    const btnSplitEqual = document.getElementById('btn-split-equal');
+    const btnSplitCustom = document.getElementById('btn-split-custom');
+    const splitParticipantsContainer = document.getElementById('split-participants-container');
+    const btnAddSplitParticipant = document.getElementById('btn-add-split-participant');
+    const splitSumDistributed = document.getElementById('split-sum-distributed');
+    const splitSumRemaining = document.getElementById('split-sum-remaining');
+
     // Elementos de Preview de Juros em Tempo Real
     const liveTotalPreview = document.getElementById('live-total-preview');
     const liveTotalValue = document.getElementById('live-total-value');
+
+    // Comandas Elementos
+    const openComandaForm = document.getElementById('open-comanda-form');
+    const comandaNumberInput = document.getElementById('comanda-number');
+    const comandaCustomerInput = document.getElementById('comanda-customer');
+    const comandaContactInput = document.getElementById('comanda-contact');
+    const comandaPartnerSelect = document.getElementById('comanda-partner');
+    const comandasGrid = document.getElementById('comandas-grid');
+    const comandasCountBadge = document.getElementById('comandas-count-badge');
+
+    // Modal Adicionar Item na Comanda
+    const comandaAddItemModal = document.getElementById('comanda-add-item-modal');
+    const comandaAddItemForm = document.getElementById('comanda-add-item-form');
+    const modalComandaId = document.getElementById('modal-comanda-id');
+    const modalItemProduct = document.getElementById('modal-item-product');
+    const modalItemPrice = document.getElementById('modal-item-price');
+    const modalItemQty = document.getElementById('modal-item-qty');
+    const btnCancelAddItem = document.getElementById('btn-cancel-add-item');
+
+    // Modal Checkout Comanda
+    const comandaCheckoutModal = document.getElementById('comanda-checkout-modal');
+    const comandaCheckoutForm = document.getElementById('comanda-checkout-form');
+    const checkoutComandaId = document.getElementById('checkout-comanda-id');
+    const checkoutComandaInfo = document.getElementById('checkout-comanda-info');
+    const checkoutComandaItemsSummary = document.getElementById('checkout-comanda-items-summary');
+    const checkoutTotalVal = document.getElementById('checkout-total-val');
+    const checkoutIsSplit = document.getElementById('checkout-is-split');
+    const checkoutSinglePanel = document.getElementById('checkout-single-panel');
+    const checkoutIsCredit = document.getElementById('checkout-is-credit');
+    const checkoutCreditFields = document.getElementById('checkout-credit-fields');
+    const checkoutDueDate = document.getElementById('checkout-due-date');
+    const checkoutInterestRate = document.getElementById('checkout-interest-rate');
+    const checkoutSplitPanel = document.getElementById('checkout-split-panel');
+    const checkoutSplitTotalBadge = document.getElementById('checkout-split-total-badge');
+    const btnCheckoutSplitEqual = document.getElementById('btn-checkout-split-equal');
+    const btnCheckoutSplitCustom = document.getElementById('btn-checkout-split-custom');
+    const checkoutSplitParticipantsContainer = document.getElementById('checkout-split-participants');
+    const btnAddCheckoutParticipant = document.getElementById('btn-add-checkout-participant');
+    const checkoutSplitSumDist = document.getElementById('checkout-split-sum-dist');
+    const checkoutSplitSumRem = document.getElementById('checkout-split-sum-rem');
+    const btnCancelCheckout = document.getElementById('btn-cancel-checkout');
 
     // Modal de Edição Elementos
     const editModal = document.getElementById('edit-modal');
@@ -90,13 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Canvas
     const canvas = document.getElementById('smokeCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas ? canvas.getContext('2d') : null;
 
     // === SISTEMA DE ANIMAÇÃO DE FUMAÇA E PARTÍCULAS (CANVAS 2D) ===
     let particles = [];
     let smokePuffs = [];
 
     function resizeCanvas() {
+        if (!canvas) return;
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
@@ -125,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         draw() {
+            if (!ctx) return;
             ctx.save();
             ctx.globalAlpha = Math.max(0, this.alpha);
             ctx.fillStyle = this.color;
@@ -159,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         draw() {
+            if (!ctx) return;
             ctx.save();
             ctx.globalAlpha = Math.max(0, this.alpha);
             ctx.fillStyle = this.color;
@@ -176,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function animate() {
+        if (!canvas || !ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (Math.random() < 0.08) {
@@ -185,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
             smokePuffs.push(new SmokePuff(canvas.width - Math.random() * (canvas.width * 0.25), canvas.height + 50, 'right'));
         }
 
-        // Partículas na tela inicial
         if (startScreen && startScreen.classList.contains('active')) {
             const startBox = document.querySelector('.start-box');
             if (startBox) {
@@ -234,21 +311,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === COMUNICAÇÃO COM O BACKEND (API MYSQL COM FALLBACK LOCALSTORAGE) ===
 
-    // Buscar Vendas
     async function loadSales() {
         try {
             const response = await fetch('/api/sales');
             if (!response.ok) throw new Error();
             sales = await response.json();
             renderDashboard();
+            updateCustomersDatalist();
         } catch (err) {
             console.warn('API /api/sales indisponível. Usando LocalStorage como backup.');
             sales = JSON.parse(localStorage.getItem('ligapods_sales')) || [];
             renderDashboard();
+            updateCustomersDatalist();
         }
     }
 
-    // === LOGICA DE SELEÇÃO E PREÇO DOS PRODUTOS ===
+    function updateCustomersDatalist() {
+        if (!customersDatalist) return;
+        const customerMap = new Map();
+        sales.forEach(s => {
+            if (s.customer && !customerMap.has(s.customer.toLowerCase())) {
+                customerMap.set(s.customer.toLowerCase(), { name: s.customer, contact: s.contact || '' });
+            }
+        });
+        comandas.forEach(c => {
+            if (c.customer && !customerMap.has(c.customer.toLowerCase())) {
+                customerMap.set(c.customer.toLowerCase(), { name: c.customer, contact: c.contact || '' });
+            }
+        });
+
+        customersDatalist.innerHTML = '';
+        customerMap.forEach(client => {
+            const opt = document.createElement('option');
+            opt.value = client.name;
+            customersDatalist.appendChild(opt);
+        });
+    }
+
+    function findCustomerContact(name) {
+        if (!name) return '';
+        const found = sales.find(s => s.customer && s.customer.toLowerCase() === name.toLowerCase().trim());
+        if (found && found.contact) return found.contact;
+        const foundComanda = comandas.find(c => c.customer && c.customer.toLowerCase() === name.toLowerCase().trim());
+        if (foundComanda && foundComanda.contact) return foundComanda.contact;
+        return '';
+    }
+
+    if (customerNameInput) {
+        customerNameInput.addEventListener('input', (e) => {
+            const contact = findCustomerContact(e.target.value);
+            if (contact && customerContactInput && !customerContactInput.value) {
+                customerContactInput.value = contact;
+            }
+        });
+    }
+
+    if (comandaCustomerInput) {
+        comandaCustomerInput.addEventListener('input', (e) => {
+            const contact = findCustomerContact(e.target.value);
+            if (contact && comandaContactInput && !comandaContactInput.value) {
+                comandaContactInput.value = contact;
+            }
+        });
+    }
+
+    // === LÓGICA DE SELEÇÃO E PREÇO DOS PRODUTOS ===
     productNameInput.addEventListener('input', (e) => {
         const text = e.target.value.toLowerCase();
         for (const [key, price] of Object.entries(productPrices)) {
@@ -258,18 +385,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             }
         }
+        updateLiveTotal();
     });
 
+    if (modalItemProduct) {
+        modalItemProduct.addEventListener('input', (e) => {
+            const text = e.target.value.toLowerCase();
+            for (const [key, price] of Object.entries(productPrices)) {
+                if (text.includes(key.toLowerCase())) {
+                    modalItemPrice.value = price.toFixed(2);
+                    break;
+                }
+            }
+        });
+    }
+
     // === NAVEGAÇÃO E AUTENTICAÇÃO ===
-    
-    // Login do Administrador
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = loginUsernameInput.value.trim();
         const password = loginPasswordInput.value;
 
         try {
-            // Tenta logar via banco na Railway
             const response = await fetch('/api/admins?action=login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -283,21 +420,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(async () => {
                     dashboardScreen.classList.add('active');
                     await loadSales();
+                    renderComandas();
                     showToast(`Olá, ${username}! Login efetuado via Banco.`, 'success');
                     loginForm.reset();
-                    // Sincronização automática a cada 10 segundos
                     setInterval(loadSales, 10000);
                 }, 100);
             } else {
                 showToast(result.message || 'Usuário ou senha incorretos!', 'danger');
             }
         } catch (err) {
-            console.warn('Backend indisponível (ou rodando localmente). Efetuando autenticação no LocalStorage.');
-            // Fallback para LocalStorage se o backend não estiver no ar
+            console.warn('Backend indisponível. Efetuando autenticação no LocalStorage.');
             let localAdmins = JSON.parse(localStorage.getItem('ligapods_admins')) || [
                 { username: 'felipencs', password: '01102030' }
             ];
-            // Salva no local se for o primeiro acesso
             if (!localStorage.getItem('ligapods_admins')) {
                 localStorage.setItem('ligapods_admins', JSON.stringify(localAdmins));
             }
@@ -308,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(async () => {
                     dashboardScreen.classList.add('active');
                     await loadSales();
+                    renderComandas();
                     showToast(`Olá, ${username}! Conectado localmente (Offline).`, 'success');
                     loginForm.reset();
                 }, 100);
@@ -317,7 +453,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Registro de Novo Administrador (dentro do painel)
     registerAdminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = regUsernameInput.value.trim();
@@ -345,8 +480,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(result.message || 'Falha ao cadastrar!', 'danger');
             }
         } catch (err) {
-            console.warn('Backend indisponível. Registrando administrador localmente.');
-            // Registrar localmente
             let localAdmins = JSON.parse(localStorage.getItem('ligapods_admins')) || [
                 { username: 'felipencs', password: '01102030' }
             ];
@@ -363,7 +496,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Sair do painel
     btnBackHome.addEventListener('click', () => {
         dashboardScreen.classList.remove('active');
         setTimeout(() => {
@@ -371,7 +503,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     });
 
-    // Alternar Abas (Tabs)
     navTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             navTabs.forEach(t => t.classList.remove('active'));
@@ -379,13 +510,280 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tab.classList.add('active');
             const targetPanel = document.getElementById(tab.getAttribute('data-tab'));
-            targetPanel.classList.add('active');
+            if (targetPanel) targetPanel.classList.add('active');
 
-            loadSales();
+            if (tab.getAttribute('data-tab') === 'tab-comandas') {
+                renderComandas();
+            } else {
+                loadSales();
+            }
         });
     });
 
-    // === REGISTRO DE VENDAS ===
+    // === SISTEMA DE RACHA NO PDV (FRENTE DE CAIXA) ===
+
+    function getDefaultDueDate() {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d.toISOString().split('T')[0];
+    }
+
+    function initSplitParticipants() {
+        const leadName = customerNameInput ? customerNameInput.value.trim() : '';
+        const leadContact = customerContactInput ? customerContactInput.value.trim() : '';
+        const globalInterest = parseFloat(interestRateInput.value) || 0;
+        const defaultDue = dueDateInput.value || getDefaultDueDate();
+
+        splitParticipants = [
+            {
+                name: leadName || '',
+                contact: leadContact || '',
+                payType: isCreditCheckbox.checked ? 'credit' : 'cash',
+                shareAmount: 0,
+                dueDate: defaultDue,
+                interestRate: globalInterest
+            },
+            {
+                name: '',
+                contact: '',
+                payType: 'credit',
+                shareAmount: 0,
+                dueDate: defaultDue,
+                interestRate: globalInterest
+            }
+        ];
+        renderSplitParticipants();
+    }
+
+    function renderSplitParticipants() {
+        if (!splitParticipantsContainer) return;
+        splitParticipantsContainer.innerHTML = '';
+
+        const globalInterest = parseFloat(interestRateInput.value) || 0;
+        const defaultDue = dueDateInput.value || getDefaultDueDate();
+
+        splitParticipants.forEach((p, idx) => {
+            if (p.payType === 'credit') {
+                if (!p.interestRate && globalInterest > 0) p.interestRate = globalInterest;
+                if (!p.dueDate) p.dueDate = defaultDue;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'split-card';
+            card.innerHTML = `
+                <div class="split-card-header">
+                    <span class="split-card-title">> CLIENTE ${idx + 1} ${idx === 0 ? '(PRINCIPAL)' : ''}</span>
+                    ${splitParticipants.length > 2 ? `<button type="button" class="split-card-remove" data-idx="${idx}">REMOVER</button>` : ''}
+                </div>
+                <div class="split-card-body">
+                    <div class="form-group">
+                        <label>NOME DO CLIENTE *</label>
+                        <input type="text" class="split-input-name" data-idx="${idx}" list="customers-datalist" value="${p.name}" placeholder="Ex: Cliente ${idx + 1}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CONTATO (WHATSAPP)</label>
+                        <input type="text" class="split-input-contact" data-idx="${idx}" value="${p.contact}" placeholder="Ex: 47999999999">
+                    </div>
+                    <div class="form-group">
+                        <label>FORMA DE PGTO *</label>
+                        <select class="split-select-pay" data-idx="${idx}">
+                            <option value="credit" ${p.payType === 'credit' ? 'selected' : ''}>⏳ FIADO (DÉBITO)</option>
+                            <option value="cash" ${p.payType === 'cash' ? 'selected' : ''}>💵 À VISTA</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>VALOR FATIA (R$) *</label>
+                        <input type="number" step="0.01" min="0" class="split-input-amount" data-idx="${idx}" value="${p.shareAmount.toFixed(2)}" ${splitMode === 'equal' ? 'readonly style="background:#151520;color:#00ff66;font-weight:bold;"' : 'required'}>
+                    </div>
+                </div>
+                ${p.payType === 'credit' ? `
+                    <div class="split-card-credit-details">
+                        <div class="form-group">
+                            <label style="font-size:11px;">VENCIMENTO *</label>
+                            <input type="date" class="split-input-due" data-idx="${idx}" value="${p.dueDate || defaultDue}" required>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:11px;">JUROS (%)</label>
+                            <input type="number" min="0" max="100" class="split-input-interest" data-idx="${idx}" value="${p.interestRate || globalInterest}">
+                        </div>
+                        <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end;">
+                            <span style="font-size:11px;color:#8a8a93;">Total com Juros:</span>
+                            <strong style="color:#00ff66;font-size:14px;">${formatCurrency(p.shareAmount + (p.shareAmount * ((p.interestRate || globalInterest) / 100)))}</strong>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            splitParticipantsContainer.appendChild(card);
+        });
+
+        splitParticipantsContainer.querySelectorAll('.split-input-name').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                splitParticipants[idx].name = e.target.value;
+                const contact = findCustomerContact(e.target.value);
+                if (contact && !splitParticipants[idx].contact) {
+                    splitParticipants[idx].contact = contact;
+                    const contactInp = splitParticipantsContainer.querySelector(`.split-input-contact[data-idx="${idx}"]`);
+                    if (contactInp) contactInp.value = contact;
+                }
+            });
+        });
+
+        splitParticipantsContainer.querySelectorAll('.split-input-contact').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                splitParticipants[idx].contact = e.target.value;
+            });
+        });
+
+        splitParticipantsContainer.querySelectorAll('.split-select-pay').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                splitParticipants[idx].payType = e.target.value;
+                renderSplitParticipants();
+                recalculateSplit();
+            });
+        });
+
+        splitParticipantsContainer.querySelectorAll('.split-input-amount').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                splitParticipants[idx].shareAmount = parseFloat(e.target.value) || 0;
+                recalculateSplitBalanceOnly();
+            });
+        });
+
+        splitParticipantsContainer.querySelectorAll('.split-input-due').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                splitParticipants[idx].dueDate = e.target.value;
+            });
+        });
+
+        splitParticipantsContainer.querySelectorAll('.split-input-interest').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                splitParticipants[idx].interestRate = parseFloat(e.target.value) || 0;
+                renderSplitParticipants();
+            });
+        });
+
+        splitParticipantsContainer.querySelectorAll('.split-card-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                if (splitParticipants.length > 2) {
+                    splitParticipants.splice(idx, 1);
+                    renderSplitParticipants();
+                    recalculateSplit();
+                }
+            });
+        });
+
+        recalculateSplit();
+    }
+
+    function recalculateSplit() {
+        const price = parseFloat(productPriceInput.value) || 0;
+        const shipping = parseFloat(shippingFeeInput.value) || 0;
+        const totalToSplit = price + shipping;
+
+        if (splitTotalBadge) {
+            splitTotalBadge.textContent = `Total da Venda: ${formatCurrency(totalToSplit)}`;
+        }
+
+        if (splitMode === 'equal') {
+            const count = splitParticipants.length || 1;
+            const equalShare = totalToSplit / count;
+            splitParticipants.forEach(p => {
+                p.shareAmount = equalShare;
+            });
+
+            if (splitParticipantsContainer) {
+                splitParticipantsContainer.querySelectorAll('.split-input-amount').forEach(inp => {
+                    inp.value = equalShare.toFixed(2);
+                });
+            }
+        }
+
+        recalculateSplitBalanceOnly();
+    }
+
+    function recalculateSplitBalanceOnly() {
+        const price = parseFloat(productPriceInput.value) || 0;
+        const shipping = parseFloat(shippingFeeInput.value) || 0;
+        const totalToSplit = price + shipping;
+
+        const sumDist = splitParticipants.reduce((acc, p) => acc + (parseFloat(p.shareAmount) || 0), 0);
+        const rem = totalToSplit - sumDist;
+
+        if (splitSumDistributed) splitSumDistributed.textContent = formatCurrency(sumDist);
+        if (splitSumRemaining) {
+            splitSumRemaining.textContent = formatCurrency(rem);
+            if (Math.abs(rem) < 0.01) {
+                splitSumRemaining.className = 'text-green font-bold';
+                splitSumRemaining.textContent = 'R$ 0,00 (100% FECHADO)';
+            } else if (rem > 0) {
+                splitSumRemaining.className = 'text-yellow';
+                splitSumRemaining.textContent = `Falta: ${formatCurrency(rem)}`;
+            } else {
+                splitSumRemaining.className = 'text-red';
+                splitSumRemaining.textContent = `Excedeu: ${formatCurrency(Math.abs(rem))}`;
+            }
+        }
+    }
+
+    if (btnSplitEqual) {
+        btnSplitEqual.addEventListener('click', () => {
+            splitMode = 'equal';
+            btnSplitEqual.classList.add('active');
+            btnSplitCustom.classList.remove('active');
+            renderSplitParticipants();
+        });
+    }
+
+    if (btnSplitCustom) {
+        btnSplitCustom.addEventListener('click', () => {
+            splitMode = 'custom';
+            btnSplitCustom.classList.add('active');
+            btnSplitEqual.classList.remove('active');
+            renderSplitParticipants();
+        });
+    }
+
+    if (btnAddSplitParticipant) {
+        btnAddSplitParticipant.addEventListener('click', () => {
+            const globalInterest = parseFloat(interestRateInput.value) || 0;
+            const defaultDue = dueDateInput.value || getDefaultDueDate();
+            splitParticipants.push({
+                name: '',
+                contact: '',
+                payType: 'credit',
+                shareAmount: 0,
+                dueDate: defaultDue,
+                interestRate: globalInterest
+            });
+            renderSplitParticipants();
+        });
+    }
+
+    // Toggle de Rachar Produto
+    isSplitCheckbox.addEventListener('change', () => {
+        if (isSplitCheckbox.checked) {
+            splitSection.classList.remove('hidden');
+            if (singleCustomerFields) singleCustomerFields.classList.add('hidden');
+            if (creditFields) creditFields.classList.add('hidden');
+            initSplitParticipants();
+        } else {
+            splitSection.classList.add('hidden');
+            if (singleCustomerFields) singleCustomerFields.classList.remove('hidden');
+            if (isCreditCheckbox.checked) {
+                creditFields.classList.remove('hidden');
+            }
+        }
+        updateLiveTotal();
+    });
+
+    // === REGISTRO DE VENDAS (PDV) ===
 
     function updateLiveTotal() {
         const price = parseFloat(productPriceInput.value) || 0;
@@ -402,19 +800,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const base = price + shipping;
             liveTotalValue.textContent = formatCurrency(base);
         }
+
+        if (isSplitCheckbox.checked) {
+            recalculateSplit();
+        }
     }
 
     productPriceInput.addEventListener('input', updateLiveTotal);
     shippingFeeInput.addEventListener('input', updateLiveTotal);
-    interestRateInput.addEventListener('input', updateLiveTotal);
+    interestRateInput.addEventListener('input', () => {
+        updateLiveTotal();
+        if (isSplitCheckbox.checked) {
+            const globalInterest = parseFloat(interestRateInput.value) || 0;
+            splitParticipants.forEach(p => {
+                if (p.payType === 'credit') p.interestRate = globalInterest;
+            });
+            renderSplitParticipants();
+        }
+    });
 
     isCreditCheckbox.addEventListener('change', () => {
         if (isCreditCheckbox.checked) {
-            creditFields.classList.remove('hidden');
+            if (!isSplitCheckbox.checked) creditFields.classList.remove('hidden');
             dueDateInput.required = true;
-            const nextWeek = new Date();
-            nextWeek.setDate(nextWeek.getDate() + 7);
-            dueDateInput.value = nextWeek.toISOString().split('T')[0];
+            dueDateInput.value = getDefaultDueDate();
         } else {
             creditFields.classList.add('hidden');
             dueDateInput.required = false;
@@ -424,16 +833,115 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLiveTotal();
     });
 
-    // Enviar Venda
+    // Enviar Venda (Normal ou Rachada)
     saleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const productName = productNameInput.value.trim();
         const productPrice = parseFloat(productPriceInput.value);
-        const customerName = customerNameInput.value.trim();
-        const customerContact = customerContactInput.value.trim();
         const shippingFee = parseFloat(shippingFeeInput.value) || 0;
         const partner = partnerSelect.value;
+        const isSplit = isSplitCheckbox.checked;
+
+        if (productPrice <= 0) {
+            showToast('ERRO: Insira um valor válido para o produto!', 'danger');
+            return;
+        }
+
+        if (isSplit) {
+            // === VALIDAÇÕES DO RACHA ===
+            if (splitParticipants.length < 2) {
+                showToast('ERRO: Adicione pelo menos 2 clientes para rachar!', 'danger');
+                return;
+            }
+
+            for (let i = 0; i < splitParticipants.length; i++) {
+                if (!splitParticipants[i].name || !splitParticipants[i].name.trim()) {
+                    showToast(`ERRO: Preencha o nome do Cliente ${i + 1} no racha!`, 'danger');
+                    return;
+                }
+                if (splitParticipants[i].shareAmount <= 0) {
+                    showToast(`ERRO: O valor da fatia do Cliente ${i + 1} deve ser maior que zero!`, 'danger');
+                    return;
+                }
+                if (splitParticipants[i].payType === 'credit' && !splitParticipants[i].dueDate) {
+                    showToast(`ERRO: Defina a data de vencimento para o Cliente ${i + 1}!`, 'danger');
+                    return;
+                }
+            }
+
+            const totalExpected = productPrice + shippingFee;
+            const totalDistributed = splitParticipants.reduce((acc, p) => acc + p.shareAmount, 0);
+            if (Math.abs(totalExpected - totalDistributed) > 0.05) {
+                showToast(`ERRO: A soma das fatias (${formatCurrency(totalDistributed)}) difere do total da venda (${formatCurrency(totalExpected)})!`, 'danger');
+                return;
+            }
+
+            // === CRIAÇÃO DAS VENDAS INDIVIDUAIS DO RACHA ===
+            const salesToInsert = [];
+            const now = new Date().toISOString();
+            const totalParts = splitParticipants.length;
+            const globalInterest = parseFloat(interestRateInput.value) || 0;
+
+            splitParticipants.forEach((p, idx) => {
+                const ratio = p.shareAmount / totalExpected;
+                const sharePrice = productPrice * ratio;
+                const shareShipping = shippingFee * ratio;
+                const isCreditPart = p.payType === 'credit';
+                // Juros fiado proporcional aplicado para todos os que estão no fiado
+                const partInterest = isCreditPart ? (p.interestRate || globalInterest) : 0;
+
+                const saleRecord = {
+                    id: Date.now() + idx,
+                    product: `[Racha ${idx + 1}/${totalParts}] ${productName}`,
+                    price: parseFloat(sharePrice.toFixed(2)),
+                    customer: p.name.trim(),
+                    contact: p.contact ? p.contact.trim() : '',
+                    shipping: parseFloat(shareShipping.toFixed(2)),
+                    partner: partner,
+                    isCredit: isCreditPart,
+                    dueDate: isCreditPart ? p.dueDate : null,
+                    interestRate: partInterest,
+                    isPaid: !isCreditPart,
+                    saleDate: now
+                };
+                salesToInsert.push(saleRecord);
+            });
+
+            // Enviar cada fatia para o banco/localStorage
+            let anyError = false;
+            for (const saleRecord of salesToInsert) {
+                try {
+                    const response = await fetch('/api/sales', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(saleRecord)
+                    });
+                    if (!response.ok) throw new Error();
+                } catch (err) {
+                    anyError = true;
+                    sales.push(saleRecord);
+                }
+            }
+
+            if (anyError) {
+                localStorage.setItem('ligapods_sales', JSON.stringify(sales));
+                showToast(`RACHA CONCLUÍDO! ${totalParts} DÉBITOS LANÇADOS LOCALMENTE (OFFLINE)!`, 'success');
+            } else {
+                showToast(`PRODUTO RACHADO ENTRE ${totalParts} CLIENTES COM SUCESSO! DÉBITOS LANÇADOS!`, 'success');
+            }
+
+            resetForm();
+            await loadSales();
+            const hasCredit = salesToInsert.some(s => s.isCredit);
+            if (hasCredit) switchTab('tab-fiados');
+            else switchTab('tab-vista');
+            return;
+        }
+
+        // === VENDA INDIVIDUAL (NORMAL) ===
+        const customerName = customerNameInput.value.trim();
+        const customerContact = customerContactInput.value.trim();
         const isCredit = isCreditCheckbox.checked;
 
         let dueDate = null;
@@ -496,6 +1004,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetForm() {
         saleForm.reset();
+        isSplitCheckbox.checked = false;
+        splitSection.classList.add('hidden');
+        if (singleCustomerFields) singleCustomerFields.classList.remove('hidden');
         creditFields.classList.add('hidden');
         dueDateInput.required = false;
         liveTotalValue.textContent = 'R$ 0,00';
@@ -516,7 +1027,607 @@ document.addEventListener('DOMContentLoaded', () => {
                 p.classList.remove('active');
             }
         });
-        loadSales();
+
+        if (tabId === 'tab-comandas') {
+            renderComandas();
+        } else {
+            loadSales();
+        }
+    }
+
+    // === MÓDULO DE COMANDAS & CONSUMO ===
+
+    function saveComandas() {
+        localStorage.setItem('ligapods_comandas', JSON.stringify(comandas));
+        renderComandas();
+        updateCustomersDatalist();
+    }
+
+    // Abrir Nova Comanda
+    if (openComandaForm) {
+        openComandaForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const number = comandaNumberInput.value.trim();
+            const customer = comandaCustomerInput.value.trim();
+            const contact = comandaContactInput.value.trim();
+            const partner = comandaPartnerSelect.value;
+
+            const exists = comandas.some(c => c.number.toLowerCase() === number.toLowerCase());
+            if (exists) {
+                showToast(`AVISO: Já existe uma comanda ativa com o identificador "${number}"!`, 'danger');
+                return;
+            }
+
+            const newComanda = {
+                id: Date.now(),
+                number: number,
+                customer: customer,
+                contact: contact,
+                partner: partner,
+                openedAt: new Date().toISOString(),
+                items: []
+            };
+
+            comandas.unshift(newComanda);
+            saveComandas();
+            showToast(`COMANDA "${number.toUpperCase()}" ABERTA COM SUCESSO!`, 'success');
+            openComandaForm.reset();
+        });
+    }
+
+    function renderComandas() {
+        if (!comandasGrid) return;
+        comandasGrid.innerHTML = '';
+
+        if (comandasCountBadge) {
+            comandasCountBadge.textContent = `${comandas.length} COMANDAS ATIVAS`;
+        }
+
+        if (comandas.length === 0) {
+            comandasGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align:center; padding: 40px; color:#8a8a93; font-family:'Orbitron', sans-serif;">
+                    NENHUMA COMANDA ABERTA NO MOMENTO.<br>
+                    <span style="font-size: 13px; color:#ff3366;">USE O FORMULÁRIO ACIMA PARA INICIAR UM ATENDIMENTO.</span>
+                </div>
+            `;
+            return;
+        }
+
+        comandas.forEach(c => {
+            const total = c.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            const card = document.createElement('div');
+            card.className = 'comanda-card';
+            card.innerHTML = `
+                <div class="comanda-card-header">
+                    <div class="comanda-title-group">
+                        <span class="comanda-number-title">📋 ${c.number.toUpperCase()}</span>
+                        <span class="comanda-customer-sub">👤 ${c.customer}</span>
+                    </div>
+                    <span class="badge badge-near">${c.partner}</span>
+                </div>
+
+                <div class="comanda-items-box">
+                    ${c.items.length === 0 ? '<span style="color:#555566;font-size:13px;text-align:center;padding:10px;">Nenhum produto lançado.</span>' : ''}
+                    ${c.items.map((it, idx) => `
+                        <div class="comanda-item-row">
+                            <span class="comanda-item-name"><span class="comanda-item-qty">${it.qty}x</span> ${it.product}</span>
+                            <div>
+                                <span class="comanda-item-val">${formatCurrency(it.price * it.qty)}</span>
+                                <button type="button" class="comanda-item-del" data-cid="${c.id}" data-idx="${idx}" title="Remover item">✕</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="comanda-total-row">
+                    <span>TOTAL:</span>
+                    <span class="text-green font-bold">${formatCurrency(total)}</span>
+                </div>
+
+                <div class="comanda-actions-grid">
+                    <button type="button" class="pixel-btn-action btn-comanda-add-item" data-cid="${c.id}">+ PRODUTO</button>
+                    <button type="button" class="pixel-btn-action btn-comanda-close" data-cid="${c.id}">FECHAR</button>
+                    <button type="button" class="pixel-btn-action action-split btn-comanda-split" data-cid="${c.id}">🍕 RACHAR COMANDA / ITENS</button>
+                </div>
+            `;
+            comandasGrid.appendChild(card);
+        });
+
+        comandasGrid.querySelectorAll('.btn-comanda-add-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cid = parseInt(btn.dataset.cid);
+                openAddItemModal(cid);
+            });
+        });
+
+        comandasGrid.querySelectorAll('.btn-comanda-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cid = parseInt(btn.dataset.cid);
+                openCheckoutModal(cid, false);
+            });
+        });
+
+        comandasGrid.querySelectorAll('.btn-comanda-split').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cid = parseInt(btn.dataset.cid);
+                openCheckoutModal(cid, true);
+            });
+        });
+
+        comandasGrid.querySelectorAll('.comanda-item-del').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cid = parseInt(btn.dataset.cid);
+                const idx = parseInt(btn.dataset.idx);
+                deleteItemFromComanda(cid, idx);
+            });
+        });
+    }
+
+    function deleteItemFromComanda(cid, itemIdx) {
+        const comanda = comandas.find(c => c.id === cid);
+        if (!comanda) return;
+        comanda.items.splice(itemIdx, 1);
+        saveComandas();
+        showToast('Produto removido da comanda.', 'success');
+    }
+
+    // Modal Adicionar Item
+    function openAddItemModal(comandaId) {
+        const comanda = comandas.find(c => c.id === comandaId);
+        if (!comanda) return;
+        modalComandaId.value = comandaId;
+        comandaAddItemForm.reset();
+        comandaAddItemModal.classList.remove('hidden');
+    }
+
+    if (btnCancelAddItem) {
+        btnCancelAddItem.addEventListener('click', () => {
+            comandaAddItemModal.classList.add('hidden');
+        });
+    }
+
+    if (comandaAddItemForm) {
+        comandaAddItemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const cid = parseInt(modalComandaId.value);
+            const comanda = comandas.find(c => c.id === cid);
+            if (!comanda) return;
+
+            const product = modalItemProduct.value.trim();
+            const price = parseFloat(modalItemPrice.value) || 0;
+            const qty = parseInt(modalItemQty.value) || 1;
+
+            if (price <= 0 || qty <= 0) {
+                showToast('ERRO: Insira preço e quantidade válidos!', 'danger');
+                return;
+            }
+
+            comanda.items.push({ product, price, qty });
+            saveComandas();
+            comandaAddItemModal.classList.add('hidden');
+            showToast(`${qty}x ${product} ADICIONADO À COMANDA!`, 'success');
+        });
+    }
+
+    // Modal Fechamento & Racha de Comanda
+    function openCheckoutModal(comandaId, isSplitInitially) {
+        const comanda = comandas.find(c => c.id === comandaId);
+        if (!comanda) return;
+
+        if (comanda.items.length === 0) {
+            showToast('ERRO: Esta comanda não possui nenhum produto lançado!', 'danger');
+            return;
+        }
+
+        const total = comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0);
+
+        checkoutComandaId.value = comandaId;
+        checkoutComandaInfo.innerHTML = `
+            <span>📋 <strong>${comanda.number.toUpperCase()}</strong></span>
+            <span>👤 ${comanda.customer} (Sócio: ${comanda.partner})</span>
+        `;
+
+        checkoutComandaItemsSummary.innerHTML = comanda.items.map(it => `
+            <div>• <strong>${it.qty}x ${it.product}</strong> - ${formatCurrency(it.price * it.qty)}</div>
+        `).join('');
+
+        checkoutTotalVal.textContent = formatCurrency(total);
+        if (checkoutSplitTotalBadge) checkoutSplitTotalBadge.textContent = `Total: ${formatCurrency(total)}`;
+
+        checkoutIsSplit.checked = isSplitInitially;
+        if (isSplitInitially) {
+            checkoutSplitPanel.classList.remove('hidden');
+            checkoutSinglePanel.classList.add('hidden');
+            initCheckoutSplit(comanda, total);
+        } else {
+            checkoutSplitPanel.classList.add('hidden');
+            checkoutSinglePanel.classList.remove('hidden');
+            checkoutIsCredit.checked = false;
+            checkoutCreditFields.classList.add('hidden');
+        }
+
+        comandaCheckoutModal.classList.remove('hidden');
+    }
+
+    if (btnCancelCheckout) {
+        btnCancelCheckout.addEventListener('click', () => {
+            comandaCheckoutModal.classList.add('hidden');
+        });
+    }
+
+    checkoutIsCredit.addEventListener('change', () => {
+        if (checkoutIsCredit.checked) {
+            checkoutCreditFields.classList.remove('hidden');
+            checkoutDueDate.required = true;
+            checkoutDueDate.value = getDefaultDueDate();
+        } else {
+            checkoutCreditFields.classList.add('hidden');
+            checkoutDueDate.required = false;
+            checkoutDueDate.value = '';
+            checkoutInterestRate.value = '0';
+        }
+    });
+
+    checkoutIsSplit.addEventListener('change', () => {
+        const cid = parseInt(checkoutComandaId.value);
+        const comanda = comandas.find(c => c.id === cid);
+        if (!comanda) return;
+        const total = comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0);
+
+        if (checkoutIsSplit.checked) {
+            checkoutSplitPanel.classList.remove('hidden');
+            checkoutSinglePanel.classList.add('hidden');
+            initCheckoutSplit(comanda, total);
+        } else {
+            checkoutSplitPanel.classList.add('hidden');
+            checkoutSinglePanel.classList.remove('hidden');
+        }
+    });
+
+    function initCheckoutSplit(comanda, total) {
+        const defaultDue = getDefaultDueDate();
+        checkoutSplitParticipants = [
+            {
+                name: comanda.customer || '',
+                contact: comanda.contact || '',
+                payType: 'credit',
+                shareAmount: total / 2,
+                dueDate: defaultDue,
+                interestRate: 0
+            },
+            {
+                name: '',
+                contact: '',
+                payType: 'credit',
+                shareAmount: total / 2,
+                dueDate: defaultDue,
+                interestRate: 0
+            }
+        ];
+        renderCheckoutSplitParticipants(total);
+    }
+
+    function renderCheckoutSplitParticipants(total) {
+        if (!checkoutSplitParticipantsContainer) return;
+        checkoutSplitParticipantsContainer.innerHTML = '';
+
+        checkoutSplitParticipants.forEach((p, idx) => {
+            const card = document.createElement('div');
+            card.className = 'split-card';
+            card.innerHTML = `
+                <div class="split-card-header">
+                    <span class="split-card-title">> PARTICIPANTE ${idx + 1} ${idx === 0 ? '(COMANDANTE)' : ''}</span>
+                    ${checkoutSplitParticipants.length > 2 ? `<button type="button" class="split-card-remove checkout-participant-remove" data-idx="${idx}">REMOVER</button>` : ''}
+                </div>
+                <div class="split-card-body">
+                    <div class="form-group">
+                        <label>NOME DO CLIENTE *</label>
+                        <input type="text" class="checkout-split-name" data-idx="${idx}" list="customers-datalist" value="${p.name}" placeholder="Ex: Cliente ${idx + 1}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CONTATO (WHATSAPP)</label>
+                        <input type="text" class="checkout-split-contact" data-idx="${idx}" value="${p.contact}" placeholder="Ex: 47999999999">
+                    </div>
+                    <div class="form-group">
+                        <label>FORMA PGTO *</label>
+                        <select class="checkout-split-pay" data-idx="${idx}">
+                            <option value="credit" ${p.payType === 'credit' ? 'selected' : ''}>⏳ FIADO (DÉBITO)</option>
+                            <option value="cash" ${p.payType === 'cash' ? 'selected' : ''}>💵 À VISTA</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>VALOR FATIA (R$) *</label>
+                        <input type="number" step="0.01" min="0" class="checkout-split-amount" data-idx="${idx}" value="${p.shareAmount.toFixed(2)}" ${checkoutSplitMode === 'equal' ? 'readonly style="background:#151520;color:#00ff66;font-weight:bold;"' : 'required'}>
+                    </div>
+                </div>
+                ${p.payType === 'credit' ? `
+                    <div class="split-card-credit-details">
+                        <div class="form-group">
+                            <label style="font-size:11px;">VENCIMENTO *</label>
+                            <input type="date" class="checkout-split-due" data-idx="${idx}" value="${p.dueDate || getDefaultDueDate()}" required>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:11px;">JUROS (%)</label>
+                            <input type="number" min="0" max="100" class="checkout-split-interest" data-idx="${idx}" value="${p.interestRate || 0}">
+                        </div>
+                        <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end;">
+                            <span style="font-size:11px;color:#8a8a93;">Total c/ Juros:</span>
+                            <strong style="color:#00ff66;font-size:14px;">${formatCurrency(p.shareAmount + (p.shareAmount * ((p.interestRate || 0) / 100)))}</strong>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            checkoutSplitParticipantsContainer.appendChild(card);
+        });
+
+        checkoutSplitParticipantsContainer.querySelectorAll('.checkout-split-name').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                checkoutSplitParticipants[idx].name = e.target.value;
+                const contact = findCustomerContact(e.target.value);
+                if (contact && !checkoutSplitParticipants[idx].contact) {
+                    checkoutSplitParticipants[idx].contact = contact;
+                    const contactInp = checkoutSplitParticipantsContainer.querySelector(`.checkout-split-contact[data-idx="${idx}"]`);
+                    if (contactInp) contactInp.value = contact;
+                }
+            });
+        });
+
+        checkoutSplitParticipantsContainer.querySelectorAll('.checkout-split-contact').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                checkoutSplitParticipants[idx].contact = e.target.value;
+            });
+        });
+
+        checkoutSplitParticipantsContainer.querySelectorAll('.checkout-split-pay').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                checkoutSplitParticipants[idx].payType = e.target.value;
+                renderCheckoutSplitParticipants(total);
+                recalculateCheckoutSplit(total);
+            });
+        });
+
+        checkoutSplitParticipantsContainer.querySelectorAll('.checkout-split-amount').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                checkoutSplitParticipants[idx].shareAmount = parseFloat(e.target.value) || 0;
+                recalculateCheckoutSplitBalanceOnly(total);
+            });
+        });
+
+        checkoutSplitParticipantsContainer.querySelectorAll('.checkout-split-due').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                checkoutSplitParticipants[idx].dueDate = e.target.value;
+            });
+        });
+
+        checkoutSplitParticipantsContainer.querySelectorAll('.checkout-split-interest').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                checkoutSplitParticipants[idx].interestRate = parseFloat(e.target.value) || 0;
+                renderCheckoutSplitParticipants(total);
+            });
+        });
+
+        checkoutSplitParticipantsContainer.querySelectorAll('.checkout-participant-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                if (checkoutSplitParticipants.length > 2) {
+                    checkoutSplitParticipants.splice(idx, 1);
+                    renderCheckoutSplitParticipants(total);
+                    recalculateCheckoutSplit(total);
+                }
+            });
+        });
+
+        recalculateCheckoutSplit(total);
+    }
+
+    function recalculateCheckoutSplit(total) {
+        if (checkoutSplitMode === 'equal') {
+            const count = checkoutSplitParticipants.length || 1;
+            const equalShare = total / count;
+            checkoutSplitParticipants.forEach(p => {
+                p.shareAmount = equalShare;
+            });
+            if (checkoutSplitParticipantsContainer) {
+                checkoutSplitParticipantsContainer.querySelectorAll('.checkout-split-amount').forEach(inp => {
+                    inp.value = equalShare.toFixed(2);
+                });
+            }
+        }
+        recalculateCheckoutSplitBalanceOnly(total);
+    }
+
+    function recalculateCheckoutSplitBalanceOnly(total) {
+        const sumDist = checkoutSplitParticipants.reduce((acc, p) => acc + (parseFloat(p.shareAmount) || 0), 0);
+        const rem = total - sumDist;
+
+        if (checkoutSplitSumDist) checkoutSplitSumDist.textContent = formatCurrency(sumDist);
+        if (checkoutSplitSumRem) {
+            checkoutSplitSumRem.textContent = formatCurrency(rem);
+            if (Math.abs(rem) < 0.01) {
+                checkoutSplitSumRem.className = 'text-green font-bold';
+                checkoutSplitSumRem.textContent = 'R$ 0,00 (100% FECHADO)';
+            } else if (rem > 0) {
+                checkoutSplitSumRem.className = 'text-yellow';
+                checkoutSplitSumRem.textContent = `Falta: ${formatCurrency(rem)}`;
+            } else {
+                checkoutSplitSumRem.className = 'text-red';
+                checkoutSplitSumRem.textContent = `Excedeu: ${formatCurrency(Math.abs(rem))}`;
+            }
+        }
+    }
+
+    if (btnCheckoutSplitEqual) {
+        btnCheckoutSplitEqual.addEventListener('click', () => {
+            checkoutSplitMode = 'equal';
+            btnCheckoutSplitEqual.classList.add('active');
+            btnCheckoutSplitCustom.classList.remove('active');
+            const cid = parseInt(checkoutComandaId.value);
+            const comanda = comandas.find(c => c.id === cid);
+            const total = comanda ? comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0) : 0;
+            renderCheckoutSplitParticipants(total);
+        });
+    }
+
+    if (btnCheckoutSplitCustom) {
+        btnCheckoutSplitCustom.addEventListener('click', () => {
+            checkoutSplitMode = 'custom';
+            btnCheckoutSplitCustom.classList.add('active');
+            btnCheckoutSplitEqual.classList.remove('active');
+            const cid = parseInt(checkoutComandaId.value);
+            const comanda = comandas.find(c => c.id === cid);
+            const total = comanda ? comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0) : 0;
+            renderCheckoutSplitParticipants(total);
+        });
+    }
+
+    if (btnAddCheckoutParticipant) {
+        btnAddCheckoutParticipant.addEventListener('click', () => {
+            const cid = parseInt(checkoutComandaId.value);
+            const comanda = comandas.find(c => c.id === cid);
+            const total = comanda ? comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0) : 0;
+
+            checkoutSplitParticipants.push({
+                name: '',
+                contact: '',
+                payType: 'credit',
+                shareAmount: 0,
+                dueDate: getDefaultDueDate(),
+                interestRate: 0
+            });
+            renderCheckoutSplitParticipants(total);
+        });
+    }
+
+    // Submissão do Fechamento de Comanda
+    if (comandaCheckoutForm) {
+        comandaCheckoutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cid = parseInt(checkoutComandaId.value);
+            const comandaIndex = comandas.findIndex(c => c.id === cid);
+            if (comandaIndex === -1) return;
+
+            const comanda = comandas[comandaIndex];
+            const total = comanda.items.reduce((acc, it) => acc + (it.price * it.qty), 0);
+            const itemsSummaryStr = comanda.items.map(it => `${it.qty}x ${it.product}`).join(', ');
+            const isSplit = checkoutIsSplit.checked;
+            const now = new Date().toISOString();
+
+            const salesToInsert = [];
+
+            if (isSplit) {
+                if (checkoutSplitParticipants.length < 2) {
+                    showToast('ERRO: Adicione pelo menos 2 clientes para rachar a comanda!', 'danger');
+                    return;
+                }
+
+                for (let i = 0; i < checkoutSplitParticipants.length; i++) {
+                    if (!checkoutSplitParticipants[i].name || !checkoutSplitParticipants[i].name.trim()) {
+                        showToast(`ERRO: Preencha o nome do Cliente ${i + 1} no racha!`, 'danger');
+                        return;
+                    }
+                    if (checkoutSplitParticipants[i].shareAmount <= 0) {
+                        showToast(`ERRO: O valor da fatia do Cliente ${i + 1} deve ser maior que zero!`, 'danger');
+                        return;
+                    }
+                    if (checkoutSplitParticipants[i].payType === 'credit' && !checkoutSplitParticipants[i].dueDate) {
+                        showToast(`ERRO: Defina a data de vencimento para o Cliente ${i + 1}!`, 'danger');
+                        return;
+                    }
+                }
+
+                const totalDist = checkoutSplitParticipants.reduce((acc, p) => acc + p.shareAmount, 0);
+                if (Math.abs(total - totalDist) > 0.05) {
+                    showToast(`ERRO: A soma das fatias (${formatCurrency(totalDist)}) difere do total da comanda (${formatCurrency(total)})!`, 'danger');
+                    return;
+                }
+
+                const totalParts = checkoutSplitParticipants.length;
+                checkoutSplitParticipants.forEach((p, idx) => {
+                    const isCreditPart = p.payType === 'credit';
+                    const partInterest = isCreditPart ? (parseFloat(p.interestRate) || 0) : 0;
+
+                    salesToInsert.push({
+                        id: Date.now() + idx,
+                        product: `[Comanda ${comanda.number}] [Racha ${idx + 1}/${totalParts}] ${itemsSummaryStr}`,
+                        price: parseFloat(p.shareAmount.toFixed(2)),
+                        customer: p.name.trim(),
+                        contact: p.contact ? p.contact.trim() : '',
+                        shipping: 0,
+                        partner: comanda.partner,
+                        isCredit: isCreditPart,
+                        dueDate: isCreditPart ? p.dueDate : null,
+                        interestRate: partInterest,
+                        isPaid: !isCreditPart,
+                        saleDate: now
+                    });
+                });
+            } else {
+                const isCredit = checkoutIsCredit.checked;
+                let dueDate = null;
+                let interestRate = 0;
+
+                if (isCredit) {
+                    dueDate = checkoutDueDate.value;
+                    interestRate = parseFloat(checkoutInterestRate.value) || 0;
+                    if (!dueDate) {
+                        showToast('ERRO: Insira a data de vencimento do fiado!', 'danger');
+                        return;
+                    }
+                }
+
+                salesToInsert.push({
+                    id: Date.now(),
+                    product: `[Comanda ${comanda.number}] ${itemsSummaryStr}`,
+                    price: total,
+                    customer: comanda.customer,
+                    contact: comanda.contact,
+                    shipping: 0,
+                    partner: comanda.partner,
+                    isCredit: isCredit,
+                    dueDate: dueDate,
+                    interestRate: interestRate,
+                    isPaid: !isCredit,
+                    saleDate: now
+                });
+            }
+
+            let anyError = false;
+            for (const saleRecord of salesToInsert) {
+                try {
+                    const response = await fetch('/api/sales', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(saleRecord)
+                    });
+                    if (!response.ok) throw new Error();
+                } catch (err) {
+                    anyError = true;
+                    sales.push(saleRecord);
+                }
+            }
+
+            comandas.splice(comandaIndex, 1);
+            saveComandas();
+            comandaCheckoutModal.classList.add('hidden');
+
+            if (anyError) {
+                localStorage.setItem('ligapods_sales', JSON.stringify(sales));
+                showToast(`COMANDA FECHADA! DÉBITOS LANÇADOS LOCALMENTE (OFFLINE)!`, 'success');
+            } else {
+                showToast(`COMANDA ${comanda.number.toUpperCase()} FINALIZADA COM SUCESSO! DÉBITOS LANÇADOS!`, 'success');
+            }
+
+            await loadSales();
+            const hasCredit = salesToInsert.some(s => s.isCredit);
+            if (hasCredit) switchTab('tab-fiados');
+            else switchTab('tab-vista');
+        });
     }
 
     // === COMPUTAÇÃO DE DATAS E STATUS DO FIADO ===
@@ -687,6 +1798,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const customerData = {};
         sales.forEach(sale => {
             const name = sale.customer;
+            if (!name) return;
             if (!customerData[name]) {
                 customerData[name] = {
                     name: name,
@@ -702,6 +1814,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 customerData[name].outstandingDebt += total;
             } else {
                 customerData[name].totalSpent += total;
+            }
+            if (sale.contact && !customerData[name].contact) {
+                customerData[name].contact = sale.contact;
             }
         });
 
@@ -747,7 +1862,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === FUNÇÕES AUXILIARES ===
 
-    // Liquidar Fiado (Receber)
     async function payCreditSale(id) {
         const sale = sales.find(s => s.id === id);
         if (sale) {
@@ -785,28 +1899,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotalValue(sale) {
-        const base = sale.price + sale.shipping;
-        if (sale.isCredit && sale.interestRate > 0) {
-            const interestAmount = base * (sale.interestRate / 100);
+        const base = (parseFloat(sale.price) || 0) + (parseFloat(sale.shipping) || 0);
+        if (sale.isCredit && parseFloat(sale.interestRate) > 0) {
+            const interestAmount = base * (parseFloat(sale.interestRate) / 100);
             return base + interestAmount;
         }
         return base;
     }
 
-    // Formatação BRL
     function formatCurrency(value) {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
     }
 
-    // Formatação Data
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         const parts = dateStr.split('-');
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
 
-    // Formatação Data/Hora
     function formatDateTime(isoString) {
+        if (!isoString) return '-';
         const d = new Date(isoString);
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -824,7 +1936,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (numbers.length === 10 || numbers.length === 11) {
             formatted = '55' + numbers;
         }
-        const msg = encodeURIComponent(`Olá, tudo bem? Estou entrando em contato sobre sua compra na LIGA PODS!`);
+        const msg = encodeURIComponent(`Olá ${name}, tudo bem? Estou entrando em contato sobre sua compra na LIGA PODS!`);
         return `https://api.whatsapp.com/send?phone=${formatted}&text=${msg}`;
     }
 
@@ -845,7 +1957,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3500);
     }
 
-    // Beep Retrô 8-bit
     function playBeep(type) {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
